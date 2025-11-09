@@ -257,167 +257,150 @@ TEST(redkina_a_min_elem_vec_seq, boundary_values) {  // NOLINT
   CheckMinElementResult(vec, task.GetOutput());
 }
 
-TEST(redkina_a_min_elem_vec_mpi, coverage_single_negative) {  // NOLINT
+TEST(redkina_a_min_elem_vec_coverage, seq_constructor_initialization) {  // NOLINT
+  InType vec = {1, 2, 3};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 1);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, seq_run_impl_empty_vector) {  // NOLINT
+  InType vec = {};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 0);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, seq_run_impl_single_element) {  // NOLINT
+  InType vec = {42};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 42);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, seq_run_impl_multiple_elements_first_min) {  // NOLINT
+  InType vec = {1, 5, 8, 2, 9};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 1);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, seq_run_impl_multiple_elements_middle_min) {  // NOLINT
+  InType vec = {5, 8, 1, 9, 2};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 1);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, seq_run_impl_multiple_elements_last_min) {  // NOLINT
+  InType vec = {5, 8, 9, 2, 1};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 1);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, seq_run_impl_negative_numbers) {  // NOLINT
+  InType vec = {-3, -1, -5, -2};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), -5);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, seq_run_impl_all_equal) {  // NOLINT
+  InType vec = {7, 7, 7, 7};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 7);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, mpi_constructor_initialization) {  // NOLINT
+  InType vec = {1, 2, 3};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 1);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_empty_vector) {  // NOLINT
+  InType vec = {};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 0);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_single_element) {  // NOLINT
+  InType vec = {42};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 42);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_single_negative) {  // NOLINT
   InType vec = {-5};
   RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), -5);
 }
 
-TEST(redkina_a_min_elem_vec_seq, coverage_single_negative) {  // NOLINT
-  InType vec = {-5};
-  RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_mpi, alternating_signs) {  // NOLINT
-  InType vec = {10, -10, 20, -20, 30, -30};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_seq, alternating_signs) {  // NOLINT
-  InType vec = {10, -10, 20, -20, 30, -30};
-  RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_mpi, repeated_minimums) {  // NOLINT
-  InType vec = {1, 3, 1, 5, 1};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_seq, repeated_minimums) {  // NOLINT
-  InType vec = {1, 3, 1, 5, 1};
-  RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_mpi, single_element_negative) {  // NOLINT
-  InType vec = {-5};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_seq, single_element_negative) {  // NOLINT
-  InType vec = {-5};
-  RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_mpi, two_elements_ascending) {  // NOLINT
-  InType vec = {1, 2};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_mpi, two_elements_descending) {  // NOLINT
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_two_elements) {  // NOLINT
   InType vec = {2, 1};
   RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 1);
 }
 
-TEST(redkina_a_min_elem_vec_seq, two_elements_ascending) {  // NOLINT
-  InType vec = {1, 2};
-  RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_seq, two_elements_descending) {  // NOLINT
-  InType vec = {2, 1};
-  RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_mpi, three_elements_middle_min) {  // NOLINT
-  InType vec = {2, 1, 3};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_seq, three_elements_middle_min) {  // NOLINT
-  InType vec = {2, 1, 3};
-  RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_mpi, all_zeros) {  // NOLINT
-  InType vec = {0, 0, 0, 0, 0};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_seq, all_zeros) {  // NOLINT
-  InType vec = {0, 0, 0, 0, 0};
-  RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_mpi, min_int_only) {  // NOLINT
-  InType vec = {std::numeric_limits<int>::min()};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_seq, min_int_only) {  // NOLINT
-  InType vec = {std::numeric_limits<int>::min()};
-  RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_mpi, max_int_only) {  // NOLINT
-  InType vec = {std::numeric_limits<int>::max()};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_seq, max_int_only) {  // NOLINT
-  InType vec = {std::numeric_limits<int>::max()};
-  RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-TEST(redkina_a_min_elem_vec_mpi, direct_method_calls) {  // NOLINT
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_three_elements) {  // NOLINT
   InType vec = {3, 1, 2};
   RedkinaAMinElemVecMPI task(vec);
 
@@ -425,49 +408,98 @@ TEST(redkina_a_min_elem_vec_mpi, direct_method_calls) {  // NOLINT
   EXPECT_TRUE(task.PreProcessing());
   EXPECT_TRUE(task.Run());
   EXPECT_TRUE(task.PostProcessing());
-
-  CheckMinElementResult(vec, task.GetOutput());
+  EXPECT_EQ(task.GetOutput(), 1);
 }
 
-TEST(redkina_a_min_elem_vec_seq, direct_method_calls) {  // NOLINT
-  InType vec = {3, 1, 2};
-  RedkinaAMinElemVecSEQ task(vec);
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_with_remainder) {  // NOLINT
+  InType vec = {1, 2, 3, 4, 5, 6, 7};
+  RedkinaAMinElemVecMPI task(vec);
 
   EXPECT_TRUE(task.Validation());
   EXPECT_TRUE(task.PreProcessing());
   EXPECT_TRUE(task.Run());
   EXPECT_TRUE(task.PostProcessing());
-
-  CheckMinElementResult(vec, task.GetOutput());
+  EXPECT_EQ(task.GetOutput(), 1);
 }
 
-TEST(redkina_a_min_elem_vec_mpi, very_large_vector) {  // NOLINT
-  InType vec(10000);
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_large_vector) {  // NOLINT
+  InType vec(100);
   for (size_t i = 0; i < vec.size(); i++) {
-    vec[i] = static_cast<int>((i * 17) % 1000 - 500);
+    vec[i] = static_cast<int>(vec.size() - i);
   }
-  vec[5000] = -1000;
-
   RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 1);
 }
 
-TEST(redkina_a_min_elem_vec_mpi, single_zero) {  // NOLINT
-  InType vec = {0};
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_all_identical) {  // NOLINT
+  InType vec = {5, 5, 5, 5, 5};
   RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 5);
 }
 
-TEST(redkina_a_min_elem_vec_seq, single_zero) {  // NOLINT
-  InType vec = {0};
-  RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_negative_numbers) {  // NOLINT
+  InType vec = {-1, -5, -3, -2};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), -5);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_mixed_numbers) {  // NOLINT
+  InType vec = {5, -2, 0, -1, 9, -3};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), -3);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_boundary_values) {  // NOLINT
+  InType vec = {std::numeric_limits<int>::max(), std::numeric_limits<int>::min(), 0};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), std::numeric_limits<int>::min());
+}
+
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_more_processes_than_elements) {  // NOLINT
+  InType vec = {1, 2};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 1);
+}
+
+TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_min_in_different_positions) {  // NOLINT
+  InType vec = {10, 20, 5, 15, 25, 3, 30};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 3);
 }
 
 }  // namespace redkina_a_min_elem_vec
