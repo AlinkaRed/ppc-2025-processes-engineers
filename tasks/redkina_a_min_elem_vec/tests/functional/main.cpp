@@ -10,7 +10,7 @@
 #include "redkina_a_min_elem_vec/seq/include/ops_seq.hpp"
 
 namespace redkina_a_min_elem_vec {
-static void CheckMinElementResult(const std::vector<int>& vec, int result) {  // NOLINT
+static void CheckMinElementResult(const std::vector<int> &vec, int result) {  // NOLINT
   if (vec.empty()) {
     EXPECT_EQ(result, 0) << "Failed for empty vector";
     return;

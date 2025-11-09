@@ -13,7 +13,7 @@
 
 namespace redkina_a_min_elem_vec {
 
-static int MinElement(const std::vector<int>& vec) {  // NOLINT
+static int MinElement(const std::vector<int> &vec) {  // NOLINT
   if (vec.empty()) {
     return 0;
   }
