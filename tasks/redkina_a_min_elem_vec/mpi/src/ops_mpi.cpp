@@ -58,7 +58,9 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
 
   int local_min = INT_MAX;
   for (int i = start_idx; i < end_idx && i < n; i++) {
-    local_min = std::min(vec[i], local_min);
+    if (vec[i] < local_min) {
+      local_min = vec[i];
+    }
   }
 
   if (local_size == 0 && rank >= n) {
