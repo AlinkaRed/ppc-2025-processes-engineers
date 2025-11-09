@@ -30,7 +30,7 @@ TEST(redkina_a_min_elem_vec_mpi, test_pipeline_run) {  // NOLINT
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  std::vector<int> vec(1000000);
+  std::vector<int> vec(100000000);
   for (size_t i = 0; i < vec.size(); i++) {
     vec[i] = static_cast<int>(vec.size() - i);
   }
@@ -71,7 +71,7 @@ TEST(redkina_a_min_elem_vec_mpi, test_task_run) {  // NOLINT
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  std::vector<int> vec(1000000);
+  std::vector<int> vec(100000000);
   for (size_t i = 0; i < vec.size(); i++) {
     vec[i] = static_cast<int>(vec.size() - i);
   }
