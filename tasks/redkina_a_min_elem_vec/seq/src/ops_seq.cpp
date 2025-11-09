@@ -1,6 +1,7 @@
 #include "redkina_a_min_elem_vec/seq/include/ops_seq.hpp"
 
 #include <climits>
+#include <cstddef>
 #include <vector>
 
 #include "redkina_a_min_elem_vec/common/include/common.hpp"
@@ -30,7 +31,7 @@ bool RedkinaAMinElemVecSEQ::RunImpl() {
 
   int min_val = vec[0];
   for (size_t i = 1; i < vec.size(); i++) {
-    if (vec[i] < min_val) {
+    if (vec[i] < min_val) {  // NOLINT
       min_val = vec[i];
     }
   }

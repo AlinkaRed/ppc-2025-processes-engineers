@@ -2,7 +2,6 @@
 
 #include <mpi.h>
 
-#include <algorithm>
 #include <climits>
 #include <vector>
 
@@ -58,7 +57,7 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
 
   int local_min = INT_MAX;
   for (int i = start_idx; i < end_idx && i < n; i++) {
-    if (vec[i] < local_min) {
+    if (vec[i] < local_min) {  // NOLINT
       local_min = vec[i];
     }
   }

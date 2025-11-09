@@ -1,33 +1,33 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 
-#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <iostream>
 #include <vector>
 
+#include "redkina_a_min_elem_vec/common/include/common.hpp"
 #include "redkina_a_min_elem_vec/mpi/include/ops_mpi.hpp"
 #include "redkina_a_min_elem_vec/seq/include/ops_seq.hpp"
 #include "task/include/task.hpp"
 
 namespace redkina_a_min_elem_vec {
 
-int MinElement(const std::vector<int> &vec) {
+static int MinElement(const std::vector<int> &vec) {  // NOLINT
   if (vec.empty()) {
     return 0;
   }
   int min_val = vec[0];
   for (size_t i = 1; i < vec.size(); i++) {
-    if (vec[i] < min_val) {
+    if (vec[i] < min_val) {  // NOLINT
       min_val = vec[i];
     }
   }
   return min_val;
 }
 
-TEST(redkina_a_min_elem_vec_mpi, test_pipeline_run) {
-  int rank;
+TEST(redkina_a_min_elem_vec_mpi, test_pipeline_run) {  // NOLINT
+  int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   std::vector<int> vec(200000000);
@@ -62,13 +62,13 @@ TEST(redkina_a_min_elem_vec_mpi, test_pipeline_run) {
   ASSERT_EQ(seq_task.GetOutput(), result) << "SEQ pipeline result incorrect";
 
   if (rank == 0) {
-    std::cout << "redkina_a_min_elem_vec_seq_enabled:pipeline:" << seq_time << std::endl;
-    std::cout << "redkina_a_min_elem_vec_mpi_enabled:pipeline:" << mpi_time << std::endl;
+    std::cout << "redkina_a_min_elem_vec_seq_enabled:pipeline:" << seq_time << '\n';
+    std::cout << "redkina_a_min_elem_vec_mpi_enabled:pipeline:" << mpi_time << '\n';
   }
 }
 
-TEST(redkina_a_min_elem_vec_mpi, test_task_run) {
-  int rank;
+TEST(redkina_a_min_elem_vec_mpi, test_task_run) {  // NOLINT
+  int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   std::vector<int> vec(200000000);
@@ -103,8 +103,8 @@ TEST(redkina_a_min_elem_vec_mpi, test_task_run) {
   ASSERT_EQ(seq_task.GetOutput(), result) << "SEQ task run result incorrect";
 
   if (rank == 0) {
-    std::cout << "redkina_a_min_elem_vec_seq_enabled:task_run:" << seq_time << std::endl;
-    std::cout << "redkina_a_min_elem_vec_mpi_enabled:task_run:" << mpi_time << std::endl;
+    std::cout << "redkina_a_min_elem_vec_seq_enabled:task_run:" << seq_time << '\n';
+    std::cout << "redkina_a_min_elem_vec_mpi_enabled:task_run:" << mpi_time << '\n';
   }
 }
 

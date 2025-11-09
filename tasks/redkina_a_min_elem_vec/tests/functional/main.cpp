@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <limits>
 #include <vector>
@@ -10,6 +9,8 @@
 #include "redkina_a_min_elem_vec/seq/include/ops_seq.hpp"
 
 namespace redkina_a_min_elem_vec {
+
+// Вспомогательная функция для проверки результата
 static void CheckMinElementResult(const std::vector<int> &vec, int result) {  // NOLINT
   if (vec.empty()) {
     EXPECT_EQ(result, 0) << "Failed for empty vector";
@@ -18,7 +19,9 @@ static void CheckMinElementResult(const std::vector<int> &vec, int result) {  //
 
   int expected_result = vec[0];
   for (size_t i = 1; i < vec.size(); i++) {
-    expected_result = std::min(vec[i], expected_result);
+    if (vec[i] < expected_result) {  // NOLINT
+      expected_result = vec[i];
+    }
   }
 
   EXPECT_EQ(result, expected_result) << "Failed for vector size: " << vec.size();
