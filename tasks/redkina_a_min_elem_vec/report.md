@@ -174,4 +174,3 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
 ## Источники
 
 1. Лекции Сысоева Александра Владимировича.  
-
