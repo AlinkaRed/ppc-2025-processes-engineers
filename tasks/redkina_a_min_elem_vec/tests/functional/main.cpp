@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <mpi.h>
 
 #include <cstddef>
 #include <limits>
@@ -565,60 +566,120 @@ TEST(redkina_a_min_elem_vec_mpi, minimal_elements_max_processes) {  // NOLINT
   EXPECT_EQ(task.GetOutput(), 1);
 }
 
-// Тесты для гарантированного покрытия непокрытых строк SEQ
-TEST(redkina_a_min_elem_vec_seq, exact_coverage_empty_vector_seq) {
-  // Этот тест ДОЛЖЕН покрыть строки 28-30 в SEQ
+TEST(redkina_a_min_elem_vec_mpi, all_ranks_empty_vector) {
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  InType vec = {};
+  RedkinaAMinElemVecMPI task(vec);
+
+  // Каждый процесс должен выполнить эти методы
+  bool validation = task.Validation();
+  bool pre_processing = task.PreProcessing();
+  bool run = task.Run();
+  bool post_processing = task.PostProcessing();
+  int output = task.GetOutput();
+
+  // Синхронизируем все процессы
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // Проверяем что все вернули успех
+  EXPECT_TRUE(validation);
+  EXPECT_TRUE(pre_processing);
+  EXPECT_TRUE(run);
+  EXPECT_TRUE(post_processing);
+
+  // Проверяем результат (должен быть 0 для пустого вектора)
+  EXPECT_EQ(output, 0);
+}
+
+TEST(redkina_a_min_elem_vec_mpi, all_ranks_single_element) {
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  InType vec = {42};
+  RedkinaAMinElemVecMPI task(vec);
+
+  bool validation = task.Validation();
+  bool pre_processing = task.PreProcessing();
+  bool run = task.Run();
+  bool post_processing = task.PostProcessing();
+  int output = task.GetOutput();
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  EXPECT_TRUE(validation);
+  EXPECT_TRUE(pre_processing);
+  EXPECT_TRUE(run);
+  EXPECT_TRUE(post_processing);
+
+  // Все процессы должны получить одинаковый результат
+  EXPECT_EQ(output, 42);
+}
+
+TEST(redkina_a_min_elem_vec_mpi, all_ranks_minimal_coverage) {
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  // Используем разное количество элементов в зависимости от количества процессов
+  InType vec;
+  if (size == 1) {
+    vec = {1};  // Один элемент для одного процесса
+  } else if (size == 2) {
+    vec = {1, 2};  // Два элемента для двух процессов
+  } else {
+    vec = {1, 2, 3};  // Три элемента для трех и более процессов
+  }
+
+  RedkinaAMinElemVecMPI task(vec);
+
+  bool validation = task.Validation();
+  bool pre_processing = task.PreProcessing();
+  bool run = task.Run();
+  bool post_processing = task.PostProcessing();
+  int output = task.GetOutput();
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  EXPECT_TRUE(validation);
+  EXPECT_TRUE(pre_processing);
+  EXPECT_TRUE(run);
+  EXPECT_TRUE(post_processing);
+
+  // Проверяем корректность результата
+  int expected_min = vec[0];
+  for (size_t i = 1; i < vec.size(); i++) {
+    if (vec[i] < expected_min) {
+      expected_min = vec[i];
+    }
+  }
+  EXPECT_EQ(output, expected_min);
+}
+
+TEST(redkina_a_min_elem_vec_seq, forced_empty_coverage) {
   InType vec = {};
   RedkinaAMinElemVecSEQ task(vec);
 
-  // Вызываем все методы по порядку
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());  // Эта строка должна покрыть if (vec.empty()) блок
-  EXPECT_TRUE(task.PostProcessing());
+  // Многократный вызов для гарантии покрытия
+  for (int i = 0; i < 10; i++) {
+    bool validation = task.Validation();
+    bool pre_processing = task.PreProcessing();
+    bool run = task.Run();
+    bool post_processing = task.PostProcessing();
+    int output = task.GetOutput();
 
-  EXPECT_EQ(task.GetOutput(), 0);
-}
+    EXPECT_TRUE(validation);
+    EXPECT_TRUE(pre_processing);
+    EXPECT_TRUE(run);
+    EXPECT_TRUE(post_processing);
+    EXPECT_EQ(output, 0);
 
-// Тесты для гарантированного покрытия непокрытых строк MPI
-TEST(redkina_a_min_elem_vec_mpi, exact_coverage_empty_vector_mpi) {
-  // Этот тест ДОЛЖЕН покрыть строки 38-42 в MPI
-  InType vec = {};
-  RedkinaAMinElemVecMPI task(vec);
-
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());  // Эта строка должна покрыть if (n == 0) и if (rank == 0) блоки
-  EXPECT_TRUE(task.PostProcessing());
-
-  EXPECT_EQ(task.GetOutput(), 0);
-}
-
-TEST(redkina_a_min_elem_vec_mpi, exact_coverage_single_element_edge_case) {
-  // Этот тест ДОЛЖЕН покрыть строки 65-67 в MPI
-  // Используем минимально возможный вектор
-  InType vec = {1};
-  RedkinaAMinElemVecMPI task(vec);
-
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());  // Эта строка должна покрыть if (local_size == 0 && rank >= n)
-  EXPECT_TRUE(task.PostProcessing());
-
-  EXPECT_EQ(task.GetOutput(), 1);
-}
-
-TEST(redkina_a_min_elem_vec_mpi, exact_coverage_minimal_vector_case) {
-  // Еще один тест для покрытия строк 65-67
-  InType vec = {2};
-  RedkinaAMinElemVecMPI task(vec);
-
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
-  EXPECT_EQ(task.GetOutput(), 2);
+    // Пересоздаем задачу для чистого теста
+    if (i < 9) {
+      task = RedkinaAMinElemVecSEQ(vec);
+    }
+  }
 }
 
 }  // namespace redkina_a_min_elem_vec
