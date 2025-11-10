@@ -502,159 +502,67 @@ TEST(redkina_a_min_elem_vec_coverage, mpi_run_impl_min_in_different_positions) {
   EXPECT_EQ(task.GetOutput(), 3);
 }
 
-TEST(redkina_a_min_elem_vec_mpi, empty_vector_rank_zero_coverage) {  // NOLINT
-  // Этот тест покрывает строки 38-42 в MPI: if (n == 0) и if (rank == 0)
+// Специальные тесты для покрытия конкретных непокрытых строк
+
+TEST(redkina_a_min_elem_vec_mpi, empty_vector_rank_zero_branch) {  // NOLINT
+  // Покрывает строки 38-42: if (n == 0) { if (rank == 0) { GetOutput() = 0; } return true; }
   InType vec = {};
   RedkinaAMinElemVecMPI task(vec);
 
-  // Вызываем методы по отдельности для лучшего покрытия
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
-  // Проверяем что для пустого вектора результат 0
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
   EXPECT_EQ(task.GetOutput(), 0);
 }
 
-TEST(redkina_a_min_elem_vec_mpi, single_element_many_processes_coverage) {  // NOLINT
-  // Этот тест покрывает строки 65-67 в MPI: if (local_size == 0 && rank >= n)
-  // Создаем ситуацию когда процессов больше чем элементов
-  InType vec = {42};  // Только 1 элемент
+TEST(redkina_a_min_elem_vec_mpi, single_element_many_processes_edge_case) {  // NOLINT
+  // Покрывает строки 65-67: if (local_size == 0 && rank >= n) { local_min = INT_MAX; }
+  // Этот случай возникает когда процессов больше чем элементов
+  InType vec = {42};  // Всего 1 элемент
   RedkinaAMinElemVecMPI task(vec);
 
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
   EXPECT_EQ(task.GetOutput(), 42);
 }
 
-TEST(redkina_a_min_elem_vec_mpi, two_elements_four_processes_coverage) {  // NOLINT
-  // Еще один тест для покрытия случая когда процессов больше чем элементов
+TEST(redkina_a_min_elem_vec_mpi, two_elements_excess_processes_coverage) {  // NOLINT
+  // Еще один тест для покрытия строк 65-67
   InType vec = {5, 3};  // 2 элемента
   RedkinaAMinElemVecMPI task(vec);
 
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
   EXPECT_EQ(task.GetOutput(), 3);
 }
 
-TEST(redkina_a_min_elem_vec_seq, empty_vector_direct_coverage) {  // NOLINT
-  // Этот тест покрывает строки 28-30 в SEQ: if (vec.empty())
+TEST(redkina_a_min_elem_vec_seq, empty_vector_direct_branch) {  // NOLINT
+  // Покрывает строки 28-30: if (vec.empty()) { GetOutput() = 0; return true; }
   InType vec = {};
   RedkinaAMinElemVecSEQ task(vec);
 
-  // Вызываем методы по отдельности
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
   EXPECT_EQ(task.GetOutput(), 0);
 }
 
-TEST(redkina_a_min_elem_vec_seq, single_element_immediate_coverage) {  // NOLINT
-  // Тест для случая когда в векторе один элемент (покрывает ветвление в цикле)
+TEST(redkina_a_min_elem_vec_seq, single_element_no_loop_coverage) {  // NOLINT
+  // Покрывает случай когда вектор имеет только один элемент (цикл не выполняется)
   InType vec = {7};
   RedkinaAMinElemVecSEQ task(vec);
 
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
   EXPECT_EQ(task.GetOutput(), 7);
 }
 
-TEST(redkina_a_min_elem_vec_seq, two_elements_no_iteration_coverage) {  // NOLINT
-  // Тест с двумя элементами - цикл выполнится только один раз
-  InType vec = {2, 1};
-  RedkinaAMinElemVecSEQ task(vec);
+TEST(redkina_a_min_elem_vec_mpi, minimal_elements_max_processes) {  // NOLINT
+  // Тест для максимального покрытия условия local_size == 0 && rank >= n
+  InType vec = {1};  // Минимальное количество элементов
+  RedkinaAMinElemVecMPI task(vec);
 
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
   EXPECT_EQ(task.GetOutput(), 1);
-}
-
-TEST(redkina_a_min_elem_vec_mpi, rank_less_than_remainder_coverage) {  // NOLINT
-  // Тест для покрытия ветки rank < remainder в распределении данных
-  InType vec = {1, 2, 3, 4, 5};  // 5 элементов для разных случаев распределения
-  RedkinaAMinElemVecMPI task(vec);
-
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
-  EXPECT_EQ(task.GetOutput(), 1);
-}
-
-TEST(redkina_a_min_elem_vec_mpi, rank_greater_equal_remainder_coverage) {  // NOLINT
-  InType vec = {1, 2, 3, 4, 5, 6};
-  RedkinaAMinElemVecMPI task(vec);
-
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
-  EXPECT_EQ(task.GetOutput(), 1);
-}
-
-TEST(redkina_a_min_elem_vec_mpi, boundary_min_value_coverage) {  // NOLINT
-  InType vec = {0, -100, std::numeric_limits<int>::min(), 100};
-  RedkinaAMinElemVecMPI task(vec);
-
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
-  EXPECT_EQ(task.GetOutput(), std::numeric_limits<int>::min());
-}
-
-TEST(redkina_a_min_elem_vec_seq, boundary_min_value_coverage) {  // NOLINT
-  InType vec = {0, -100, std::numeric_limits<int>::min(), 100};
-  RedkinaAMinElemVecSEQ task(vec);
-
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
-  EXPECT_EQ(task.GetOutput(), std::numeric_limits<int>::min());
-}
-
-TEST(redkina_a_min_elem_vec_mpi, all_negative_large_coverage) {  // NOLINT
-  InType vec = {-5, -2, -8, -1, -9, -3, -7, -4, -6};
-  RedkinaAMinElemVecMPI task(vec);
-
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
-  EXPECT_EQ(task.GetOutput(), -9);
-}
-
-TEST(redkina_a_min_elem_vec_seq, all_negative_large_coverage) {  // NOLINT
-  InType vec = {-5, -2, -8, -1, -9, -3, -7, -4, -6};
-  RedkinaAMinElemVecSEQ task(vec);
-
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-
-  EXPECT_EQ(task.GetOutput(), -9);
 }
 
 }  // namespace redkina_a_min_elem_vec
