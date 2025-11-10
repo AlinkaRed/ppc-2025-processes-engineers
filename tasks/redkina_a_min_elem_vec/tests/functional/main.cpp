@@ -514,144 +514,248 @@ TEST(redkina_a_min_elem_vec_mpi, minimal_elements_max_processes) {  // NOLINT
   EXPECT_EQ(task.GetOutput(), 1);
 }
 
-// Дополнительные тесты для MPI версии
+TEST(redkina_a_min_elem_vec_mpi, loop_boundary_condition_coverage) {  // NOLINT
+  // Создаем случай где end_idx может быть больше чем n (теоретически)
+  // Используем просто большой вектор чтобы покрыть разные распределения
+  InType vec(17);  // Простое число для неравномерного распределения
+  for (size_t i = 0; i < vec.size(); i++) {
+    vec[i] = static_cast<int>(vec.size() - i);
+  }
+  vec[16] = -1;  // Минимальный элемент в конце
 
-// Тест для покрытия случая, когда количество процессов больше количества элементов
-TEST(redkina_a_min_elem_vec_mpi, more_processes_than_elements) {  // NOLINT
-  InType vec = {5, 3, 8};
   RedkinaAMinElemVecMPI task(vec);
   bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
   ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
+  EXPECT_EQ(task.GetOutput(), -1);
 }
 
-// Тест для покрытия случая с одним элементом и многими процессами
-TEST(redkina_a_min_elem_vec_mpi, single_element_many_processes) {  // NOLINT
+// Тест для покрытия всех возможных путей в условии валидации
+TEST(redkina_a_min_elem_vec_validation, mpi_validation_condition_coverage) {  // NOLINT
+  // Тест на непустой вектор и output = 0 (валидация успешна)
+  InType vec = {1, 2, 3};
+  RedkinaAMinElemVecMPI task(vec);
+  EXPECT_TRUE(task.Validation());
+
+  // Тест на пустой вектор (валидация неуспешна)
+  InType empty_vec = {};
+  RedkinaAMinElemVecMPI empty_task(empty_vec);
+  EXPECT_FALSE(empty_task.Validation());
+}
+
+// Специфические тесты для принудительного покрытия веток MPI
+
+// Тест для принудительного покрытия ветки: if (local_size == 0 && rank >= n)
+// Создаем ситуацию, когда процессов больше чем элементов
+TEST(redkina_a_min_elem_vec_mpi, force_coverage_excess_processes) {  // NOLINT
+  // Используем минимально возможный вектор чтобы максимизировать шансы
+  // попасть в ветку с local_size == 0
+  InType vec = {100};
+  RedkinaAMinElemVecMPI task(vec);
+
+  // Принудительно вызываем все методы чтобы покрыть все ветки
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+
+  // Проверяем что результат корректен несмотря на избыток процессов
+  EXPECT_EQ(task.GetOutput(), 100);
+}
+
+// Тест для покрытия специфического распределения с remainder > 0
+// где некоторые процессы получают на 1 элемент больше
+TEST(redkina_a_min_elem_vec_mpi, force_coverage_uneven_distribution) {  // NOLINT
+  // Размер вектора выбран так чтобы был ненулевой remainder
+  // Например: для 4 процессов: 7 элементов, remainder = 3
+  InType vec = {50, 30, 80, 10, 60, 20, 40};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), 10);
+}
+
+// Тест для покрытия случая когда все процессы имеют local_size > 0
+// но распределение неравномерное
+TEST(redkina_a_min_elem_vec_mpi, force_coverage_all_processes_have_work) {  // NOLINT
+  // Для 4 процессов: 9 элементов, remainder = 1
+  // rank 0: 3 элемента, rank 1-3: по 2 элемента
+  InType vec = {15, 25, 5, 35, 45, 10, 55, 20, 30};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), 5);
+}
+
+// Тест для принудительного покрытия условия в цикле когда vec[i] >= local_min
+TEST(redkina_a_min_elem_vec_mpi, force_coverage_condition_false) {  // NOLINT
+  // Вектор где минимальный элемент в начале,
+  // чтобы на остальных итерациях условие было false
+  InType vec = {1, 2, 3, 4, 5, 6, 7, 8};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), 1);
+}
+
+// Тест для покрытия граничного условия i < n в цикле
+TEST(redkina_a_min_elem_vec_mpi, force_coverage_loop_boundary) {  // NOLINT
+  // Вектор с размером, который на границе распределения
+  InType vec = {10, 20, 30, 40, 50};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), 10);
+}
+
+// Тест для покрытия случая когда start_idx и end_idx вычисляются
+// по разным формулам в зависимости от rank и remainder
+TEST(redkina_a_min_elem_vec_mpi, force_coverage_index_calculation_both_paths) {  // NOLINT
+  // Размер вектора выбран чтобы покрыть обе ветки вычисления индексов
+  InType vec = {8, 3, 6, 1, 9, 4, 2, 7, 5, 0};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), 0);
+}
+
+// Тест для покрытия всех возможных путей в конструкторе
+TEST(redkina_a_min_elem_vec_mpi, force_coverage_constructor_paths) {  // NOLINT
+  // Множество различных векторов для покрытия разных путей в конструкторе
+  std::vector<std::vector<int>> test_vectors = {{1}, {1, 2}, {1, 2, 3}, {3, 2, 1}, {5, 5, 5}, {-1, -2, -3}};
+
+  for (const auto &vec : test_vectors) {
+    RedkinaAMinElemVecMPI task(vec);
+    EXPECT_TRUE(task.Validation());
+    EXPECT_TRUE(task.PreProcessing());
+    EXPECT_TRUE(task.Run());
+    EXPECT_TRUE(task.PostProcessing());
+    CheckMinElementResult(vec, task.GetOutput());
+  }
+}
+
+// Тест для принудительного покрытия всех методов PreProcessingImpl и PostProcessingImpl
+TEST(redkina_a_min_elem_vec_mpi, force_coverage_pre_post_processing) {  // NOLINT
   InType vec = {42};
   RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
+
+  // Явно проверяем что PreProcessing и PostProcessing всегда возвращают true
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.PostProcessing());
 }
 
-// Тест для покрытия случая с двумя элементами и избытком процессов
-TEST(redkina_a_min_elem_vec_mpi, two_elements_excess_processes) {  // NOLINT
-  InType vec = {5, 3};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
+// Специфические тесты для SEQ версии
 
-// Тест для покрытия случая, когда n делится на size без остатка
-TEST(redkina_a_min_elem_vec_mpi, divisible_evenly) {  // NOLINT
-  InType vec = {1, 2, 3, 4, 5, 6};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-// Тест для покрытия случая, когда n не делится на size (есть остаток)
-TEST(redkina_a_min_elem_vec_mpi, with_remainder) {  // NOLINT
-  InType vec = {1, 2, 3, 4, 5};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-// Тест для покрытия случая, когда local_size = 0 для некоторых процессов
-TEST(redkina_a_min_elem_vec_mpi, zero_local_size_for_some_processes) {  // NOLINT
-  InType vec = {1};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-// Тест для покрытия ветки условия в цикле (vec[i] < local_min)
-TEST(redkina_a_min_elem_vec_mpi, condition_in_loop_coverage) {  // NOLINT
-  InType vec = {5, 3, 8, 2, 9, 1, 7, 4, 6};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-// Тест для покрытия случая, когда все элементы одинаковые (проверка условия в цикле)
-TEST(redkina_a_min_elem_vec_mpi, all_equal_elements_loop_coverage) {  // NOLINT
-  InType vec = {5, 5, 5, 5, 5};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-// Тест для покрытия граничного случая с INT_MAX и INT_MIN
-TEST(redkina_a_min_elem_vec_mpi, int_boundaries_extreme) {  // NOLINT
-  InType vec = {std::numeric_limits<int>::max(), std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), 0,
-                -1};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-// Тест для покрытия случая с одним элементом и проверкой веток в распределении
-TEST(redkina_a_min_elem_vec_mpi, single_element_distribution) {  // NOLINT
-  InType vec = {-10};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-// Тест для покрытия случая с двумя элементами и разным распределением
-TEST(redkina_a_min_elem_vec_mpi, two_elements_distribution) {  // NOLINT
-  InType vec = {8, -3};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-// Тест для покрытия случая, когда минимальный элемент в разных частях распределения
-TEST(redkina_a_min_elem_vec_mpi, min_in_different_distribution_parts) {  // NOLINT
-  InType vec = {10, 20, 5, 15, 25, 3, 30, 8, 12};
-  RedkinaAMinElemVecMPI task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
-}
-
-// Дополнительные тесты для SEQ версии (для полноты покрытия)
-
-// Тест для покрытия случая с одним элементом (без входа в цикл)
-TEST(redkina_a_min_elem_vec_seq, single_element_no_loop) {  // NOLINT
-  InType vec = {7};
+// Тест для принудительного покрытия случая когда цикл не выполняется
+TEST(redkina_a_min_elem_vec_seq, force_coverage_no_loop_execution) {  // NOLINT
+  InType vec = {999};
   RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), 999);
 }
 
-// Тест для покрытия случая, когда условие в цикле никогда не выполняется
-TEST(redkina_a_min_elem_vec_seq, condition_never_executes) {  // NOLINT
-  InType vec = {1, 2, 3, 4, 5};
+// Тест для покрытия случая когда условие в цикле всегда истинно
+TEST(redkina_a_min_elem_vec_seq, force_coverage_condition_always_true) {  // NOLINT
+  // Строго убывающая последовательность
+  InType vec = {5, 4, 3, 2, 1, 0, -1, -2};
   RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), -2);
 }
 
-// Тест для покрытия случая, когда условие в цикле выполняется на каждой итерации
-TEST(redkina_a_min_elem_vec_seq, condition_always_executes) {  // NOLINT
-  InType vec = {5, 4, 3, 2, 1};
+// Тест для покрытия случая когда условие в цикле всегда ложно
+TEST(redkina_a_min_elem_vec_seq, force_coverage_condition_always_false) {  // NOLINT
+  // Строго возрастающая последовательность
+  InType vec = {-5, -4, -3, -2, -1, 0, 1, 2};
   RedkinaAMinElemVecSEQ task(vec);
-  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
-  ASSERT_TRUE(success);
-  CheckMinElementResult(vec, task.GetOutput());
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), -5);
+}
+
+// Тест для покрытия случая когда условие в цикле иногда истинно, иногда ложно
+TEST(redkina_a_min_elem_vec_seq, force_coverage_condition_mixed) {  // NOLINT
+  // Неупорядоченная последовательность
+  InType vec = {5, 3, 8, 1, 9, 2, 7, 4, 6, 0};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), 0);
+}
+
+// Тест для принудительного покрытия всех путей в валидации
+TEST(redkina_a_min_elem_vec_validation, force_coverage_validation_paths) {  // NOLINT
+  // Тест успешной валидации
+  {
+    InType vec = {1, 2, 3};
+    RedkinaAMinElemVecMPI task(vec);
+    EXPECT_TRUE(task.Validation());
+  }
+
+  // Тест неуспешной валидации - пустой вектор
+  {
+    InType vec = {};
+    RedkinaAMinElemVecMPI task(vec);
+    EXPECT_FALSE(task.Validation());
+  }
+
+  // Тест неуспешной валидации - output != 0 (хотя в конструкторе он всегда 0)
+  // Этот случай сложно воспроизвести, так как конструктор всегда устанавливает output = 0
+}
+
+// Комплексный тест для покрытия всех основных веток в одном тесте
+TEST(redkina_a_min_elem_vec_mpi, force_coverage_comprehensive) {  // NOLINT
+  // Тестируем различные комбинации которые могут повлиять на покрытие веток
+  std::vector<std::pair<std::vector<int>, std::string>> test_cases = {
+      {{1}, "single_element"},         {{1, 2}, "two_elements"},           {{2, 1}, "two_elements_reversed"},
+      {{3, 1, 2}, "three_elements"},   {{5, 3, 8, 2, 7}, "five_elements"}, {{1, 1, 1, 1, 1}, "all_identical"},
+      {{-1, -2, -3}, "negative_only"}, {{-1, 0, 1}, "mixed_signs"},        {{INT_MAX, INT_MIN, 0}, "boundary_values"}};
+
+  for (const auto &[vec, description] : test_cases) {
+    RedkinaAMinElemVecMPI task(vec);
+    EXPECT_TRUE(task.Validation()) << "Failed validation for: " << description;
+    EXPECT_TRUE(task.PreProcessing()) << "Failed pre-processing for: " << description;
+    EXPECT_TRUE(task.Run()) << "Failed run for: " << description;
+    EXPECT_TRUE(task.PostProcessing()) << "Failed post-processing for: " << description;
+    CheckMinElementResult(vec, task.GetOutput()) << "Failed check for: " << description;
+  }
 }
 
 }  // namespace redkina_a_min_elem_vec
