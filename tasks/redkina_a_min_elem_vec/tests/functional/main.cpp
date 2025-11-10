@@ -513,87 +513,88 @@ TEST(redkina_a_min_elem_vec_mpi, minimal_elements_max_processes) {  // NOLINT
   EXPECT_EQ(task.GetOutput(), 1);
 }
 
-// 1/2, 2/4: MPI ValidationImpl — пустой вектор и ненулевой Output
-TEST(redkina_a_min_elem_vec_branches, mpi_validation_empty_vector_branch) {  // 1/2
-  InType vec = {};
-  RedkinaAMinElemVecMPI task(vec);
-  EXPECT_FALSE(task.Validation());
-}
+// ====================================================================
+// ДОПОЛНИТЕЛЬНЫЕ ТЕСТЫ для покрытия "дробных" веток без исключений
+// ====================================================================
 
-TEST(redkina_a_min_elem_vec_branches, mpi_validation_nonzero_output_branch) {  // 2/4
-  InType vec = {10, 20};
-  RedkinaAMinElemVecMPI task(vec);
-  task.GetOutput() = 5;  // ломаем условие
-  EXPECT_FALSE(task.Validation());
-}
-
-// 1/4: MPI RunImpl — local_size == 0 && rank >= n
-TEST(redkina_a_min_elem_vec_branches, mpi_local_size_zero_branch) {
-  InType vec = {42};
-  RedkinaAMinElemVecMPI task(vec);
-  ASSERT_TRUE(task.Validation());
-  ASSERT_TRUE(task.PreProcessing());
-  ASSERT_TRUE(task.Run());
-  ASSERT_TRUE(task.PostProcessing());
-  EXPECT_EQ(task.GetOutput(), 42);
-}
-
-// 3/4: MPI RunImpl — ветка if(vec[i] < local_min) не выполняется
-TEST(redkina_a_min_elem_vec_branches, mpi_no_if_condition_true_branch) {
-  InType vec = {1, 2, 3, 4, 5};  // возрастающий, не выполняется ни одно сравнение
-  RedkinaAMinElemVecMPI task(vec);
-  ASSERT_TRUE(task.Validation());
-  ASSERT_TRUE(task.PreProcessing());
-  ASSERT_TRUE(task.Run());
-  ASSERT_TRUE(task.PostProcessing());
-  EXPECT_EQ(task.GetOutput(), 1);
-}
-
-// 2/2: MPI ветка else (rank >= remainder)
-TEST(redkina_a_min_elem_vec_branches, mpi_else_rank_branch) {
-  InType vec = {9, 8, 7, 6, 5, 4};
-  RedkinaAMinElemVecMPI task(vec);
-  ASSERT_TRUE(task.Validation());
-  ASSERT_TRUE(task.PreProcessing());
-  ASSERT_TRUE(task.Run());
-  ASSERT_TRUE(task.PostProcessing());
-  EXPECT_EQ(task.GetOutput(), 4);
-}
-
-// 1/2, 2/4: SEQ ValidationImpl
-TEST(redkina_a_min_elem_vec_branches, seq_validation_empty_vector_branch) {  // 1/2
-  InType vec = {};
-  RedkinaAMinElemVecSEQ task(vec);
-  EXPECT_FALSE(task.Validation());
-}
-
-TEST(redkina_a_min_elem_vec_branches, seq_validation_nonzero_output_branch) {  // 2/4
+TEST(redkina_a_min_elem_vec_extra_fixed, mpi_validation_false_output_nonzero) {
+  // покрытие ветки ValidationImpl: !GetInput().empty() && (GetOutput() == 0)
   InType vec = {1, 2, 3};
+  RedkinaAMinElemVecMPI task(vec);
+
+  // вручную испортим выход
+  task.GetOutput() = 42;            // теперь (GetOutput()==0) ложно
+  EXPECT_FALSE(task.Validation());  // должно вернуть false
+}
+
+TEST(redkina_a_min_elem_vec_extra_fixed, mpi_run_local_size_zero_branch) {
+  // покрытие ветки 1/4: local_size == 0 && rank >= n
+  // Эмулируем минимальный вектор, чтобы некоторые процессы не имели данных
+  InType vec = {5};
+  RedkinaAMinElemVecMPI task(vec);
+
+  ASSERT_TRUE(task.Validation());
+  ASSERT_TRUE(task.PreProcessing());
+  ASSERT_TRUE(task.Run());
+  ASSERT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 5);
+}
+
+TEST(redkina_a_min_elem_vec_extra_fixed, mpi_run_no_min_update_branch) {
+  // покрытие ветки 3/4: условие if(vec[i] < local_min) не выполняется ни разу
+  InType vec = {7, 7, 7, 7};
+  RedkinaAMinElemVecMPI task(vec);
+
+  ASSERT_TRUE(task.Validation());
+  ASSERT_TRUE(task.PreProcessing());
+  ASSERT_TRUE(task.Run());
+  ASSERT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 7);
+}
+
+TEST(redkina_a_min_elem_vec_extra_fixed, mpi_run_min_updated_branch) {
+  // покрытие 2/2: ветка где if (vec[i] < local_min) выполняется
+  InType vec = {9, 3, 5, 7};
+  RedkinaAMinElemVecMPI task(vec);
+
+  ASSERT_TRUE(task.Validation());
+  ASSERT_TRUE(task.PreProcessing());
+  ASSERT_TRUE(task.Run());
+  ASSERT_TRUE(task.PostProcessing());
+  EXPECT_EQ(task.GetOutput(), 3);
+}
+
+TEST(redkina_a_min_elem_vec_extra_fixed, seq_validation_output_nonzero) {
+  // покрытие 1/2 и 2/4 в SEQ ValidationImpl
+  InType vec = {4, 2, 1};
   RedkinaAMinElemVecSEQ task(vec);
-  task.GetOutput() = 7;
+
+  task.GetOutput() = 99;  // теперь (GetOutput()==0) false
   EXPECT_FALSE(task.Validation());
 }
 
-// 1/2: SEQ RunImpl — один элемент, цикл не заходит
-TEST(redkina_a_min_elem_vec_branches, seq_runimpl_no_loop_branch) {
-  InType vec = {100};
+TEST(redkina_a_min_elem_vec_extra_fixed, seq_run_no_if_trigger) {
+  // покрытие ветки без входа в if
+  InType vec = {10, 10, 10};
   RedkinaAMinElemVecSEQ task(vec);
+
   ASSERT_TRUE(task.Validation());
   ASSERT_TRUE(task.PreProcessing());
-  ASSERT_TRUE(task.Run());
+  ASSERT_TRUE(task.Run());  // ни разу не выполнится if
   ASSERT_TRUE(task.PostProcessing());
-  EXPECT_EQ(task.GetOutput(), 100);
+  EXPECT_EQ(task.GetOutput(), 10);
 }
 
-// 2/4: SEQ RunImpl — if(vec[i] < min_val) не выполняется
-TEST(redkina_a_min_elem_vec_branches, seq_runimpl_if_false_branch) {
-  InType vec = {1, 2, 3, 4};  // возрастающий
+TEST(redkina_a_min_elem_vec_extra_fixed, seq_run_if_trigger_multiple) {
+  // покрытие ветки где if срабатывает несколько раз
+  InType vec = {8, 6, 4, 2};
   RedkinaAMinElemVecSEQ task(vec);
+
   ASSERT_TRUE(task.Validation());
   ASSERT_TRUE(task.PreProcessing());
-  ASSERT_TRUE(task.Run());
+  ASSERT_TRUE(task.Run());  // if (vec[i] < min_val) будет true несколько раз
   ASSERT_TRUE(task.PostProcessing());
-  EXPECT_EQ(task.GetOutput(), 1);
+  EXPECT_EQ(task.GetOutput(), 2);
 }
 
 }  // namespace redkina_a_min_elem_vec
