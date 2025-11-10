@@ -565,4 +565,60 @@ TEST(redkina_a_min_elem_vec_mpi, minimal_elements_max_processes) {  // NOLINT
   EXPECT_EQ(task.GetOutput(), 1);
 }
 
+// Тесты для гарантированного покрытия непокрытых строк SEQ
+TEST(redkina_a_min_elem_vec_seq, exact_coverage_empty_vector_seq) {
+  // Этот тест ДОЛЖЕН покрыть строки 28-30 в SEQ
+  InType vec = {};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  // Вызываем все методы по порядку
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());  // Эта строка должна покрыть if (vec.empty()) блок
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), 0);
+}
+
+// Тесты для гарантированного покрытия непокрытых строк MPI
+TEST(redkina_a_min_elem_vec_mpi, exact_coverage_empty_vector_mpi) {
+  // Этот тест ДОЛЖЕН покрыть строки 38-42 в MPI
+  InType vec = {};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());  // Эта строка должна покрыть if (n == 0) и if (rank == 0) блоки
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), 0);
+}
+
+TEST(redkina_a_min_elem_vec_mpi, exact_coverage_single_element_edge_case) {
+  // Этот тест ДОЛЖЕН покрыть строки 65-67 в MPI
+  // Используем минимально возможный вектор
+  InType vec = {1};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());  // Эта строка должна покрыть if (local_size == 0 && rank >= n)
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), 1);
+}
+
+TEST(redkina_a_min_elem_vec_mpi, exact_coverage_minimal_vector_case) {
+  // Еще один тест для покрытия строк 65-67
+  InType vec = {2};
+  RedkinaAMinElemVecMPI task(vec);
+
+  EXPECT_TRUE(task.Validation());
+  EXPECT_TRUE(task.PreProcessing());
+  EXPECT_TRUE(task.Run());
+  EXPECT_TRUE(task.PostProcessing());
+
+  EXPECT_EQ(task.GetOutput(), 2);
+}
+
 }  // namespace redkina_a_min_elem_vec
