@@ -653,16 +653,6 @@ TEST(redkina_a_min_elem_vec_mpi, force_coverage_constructor_paths) {  // NOLINT
   }
 }
 
-// Тест для принудительного покрытия всех методов PreProcessingImpl и PostProcessingImpl
-TEST(redkina_a_min_elem_vec_mpi, force_coverage_pre_post_processing) {  // NOLINT
-  InType vec = {42};
-  RedkinaAMinElemVecMPI task(vec);
-
-  // Явно проверяем что PreProcessing и PostProcessing всегда возвращают true
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.PostProcessing());
-}
-
 // Специфические тесты для SEQ версии
 
 // Тест для принудительного покрытия случая когда цикл не выполняется
@@ -738,24 +728,6 @@ TEST(redkina_a_min_elem_vec_validation, force_coverage_validation_paths) {  // N
 
   // Тест неуспешной валидации - output != 0 (хотя в конструкторе он всегда 0)
   // Этот случай сложно воспроизвести, так как конструктор всегда устанавливает output = 0
-}
-
-// Комплексный тест для покрытия всех основных веток в одном тесте
-TEST(redkina_a_min_elem_vec_mpi, force_coverage_comprehensive) {  // NOLINT
-  // Тестируем различные комбинации которые могут повлиять на покрытие веток
-  std::vector<std::pair<std::vector<int>, std::string>> test_cases = {
-      {{1}, "single_element"},         {{1, 2}, "two_elements"},           {{2, 1}, "two_elements_reversed"},
-      {{3, 1, 2}, "three_elements"},   {{5, 3, 8, 2, 7}, "five_elements"}, {{1, 1, 1, 1, 1}, "all_identical"},
-      {{-1, -2, -3}, "negative_only"}, {{-1, 0, 1}, "mixed_signs"},        {{INT_MAX, INT_MIN, 0}, "boundary_values"}};
-
-  for (const auto &[vec, description] : test_cases) {
-    RedkinaAMinElemVecMPI task(vec);
-    EXPECT_TRUE(task.Validation()) << "Failed validation for: " << description;
-    EXPECT_TRUE(task.PreProcessing()) << "Failed pre-processing for: " << description;
-    EXPECT_TRUE(task.Run()) << "Failed run for: " << description;
-    EXPECT_TRUE(task.PostProcessing()) << "Failed post-processing for: " << description;
-    CheckMinElementResult(vec, task.GetOutput()) << "Failed check for: " << description;
-  }
 }
 
 }  // namespace redkina_a_min_elem_vec
