@@ -514,4 +514,144 @@ TEST(redkina_a_min_elem_vec_mpi, minimal_elements_max_processes) {  // NOLINT
   EXPECT_EQ(task.GetOutput(), 1);
 }
 
+// Дополнительные тесты для MPI версии
+
+// Тест для покрытия случая, когда количество процессов больше количества элементов
+TEST(redkina_a_min_elem_vec_mpi, more_processes_than_elements) {  // NOLINT
+  InType vec = {5, 3, 8};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия случая с одним элементом и многими процессами
+TEST(redkina_a_min_elem_vec_mpi, single_element_many_processes) {  // NOLINT
+  InType vec = {42};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия случая с двумя элементами и избытком процессов
+TEST(redkina_a_min_elem_vec_mpi, two_elements_excess_processes) {  // NOLINT
+  InType vec = {5, 3};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия случая, когда n делится на size без остатка
+TEST(redkina_a_min_elem_vec_mpi, divisible_evenly) {  // NOLINT
+  InType vec = {1, 2, 3, 4, 5, 6};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия случая, когда n не делится на size (есть остаток)
+TEST(redkina_a_min_elem_vec_mpi, with_remainder) {  // NOLINT
+  InType vec = {1, 2, 3, 4, 5};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия случая, когда local_size = 0 для некоторых процессов
+TEST(redkina_a_min_elem_vec_mpi, zero_local_size_for_some_processes) {  // NOLINT
+  InType vec = {1};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия ветки условия в цикле (vec[i] < local_min)
+TEST(redkina_a_min_elem_vec_mpi, condition_in_loop_coverage) {  // NOLINT
+  InType vec = {5, 3, 8, 2, 9, 1, 7, 4, 6};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия случая, когда все элементы одинаковые (проверка условия в цикле)
+TEST(redkina_a_min_elem_vec_mpi, all_equal_elements_loop_coverage) {  // NOLINT
+  InType vec = {5, 5, 5, 5, 5};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия граничного случая с INT_MAX и INT_MIN
+TEST(redkina_a_min_elem_vec_mpi, int_boundaries_extreme) {  // NOLINT
+  InType vec = {std::numeric_limits<int>::max(), std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), 0,
+                -1};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия случая с одним элементом и проверкой веток в распределении
+TEST(redkina_a_min_elem_vec_mpi, single_element_distribution) {  // NOLINT
+  InType vec = {-10};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия случая с двумя элементами и разным распределением
+TEST(redkina_a_min_elem_vec_mpi, two_elements_distribution) {  // NOLINT
+  InType vec = {8, -3};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия случая, когда минимальный элемент в разных частях распределения
+TEST(redkina_a_min_elem_vec_mpi, min_in_different_distribution_parts) {  // NOLINT
+  InType vec = {10, 20, 5, 15, 25, 3, 30, 8, 12};
+  RedkinaAMinElemVecMPI task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Дополнительные тесты для SEQ версии (для полноты покрытия)
+
+// Тест для покрытия случая с одним элементом (без входа в цикл)
+TEST(redkina_a_min_elem_vec_seq, single_element_no_loop) {  // NOLINT
+  InType vec = {7};
+  RedkinaAMinElemVecSEQ task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия случая, когда условие в цикле никогда не выполняется
+TEST(redkina_a_min_elem_vec_seq, condition_never_executes) {  // NOLINT
+  InType vec = {1, 2, 3, 4, 5};
+  RedkinaAMinElemVecSEQ task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
+// Тест для покрытия случая, когда условие в цикле выполняется на каждой итерации
+TEST(redkina_a_min_elem_vec_seq, condition_always_executes) {  // NOLINT
+  InType vec = {5, 4, 3, 2, 1};
+  RedkinaAMinElemVecSEQ task(vec);
+  bool success = task.Validation() && task.PreProcessing() && task.Run() && task.PostProcessing();
+  ASSERT_TRUE(success);
+  CheckMinElementResult(vec, task.GetOutput());
+}
+
 }  // namespace redkina_a_min_elem_vec
