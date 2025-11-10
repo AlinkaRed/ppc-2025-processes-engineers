@@ -15,7 +15,7 @@ RedkinaAMinElemVecSEQ::RedkinaAMinElemVecSEQ(const InType &in) {
 }
 
 bool RedkinaAMinElemVecSEQ::ValidationImpl() {
-  return (GetOutput() == 0);
+  return !GetInput().empty() && (GetOutput() == 0);
 }
 
 bool RedkinaAMinElemVecSEQ::PreProcessingImpl() {
@@ -24,10 +24,6 @@ bool RedkinaAMinElemVecSEQ::PreProcessingImpl() {
 
 bool RedkinaAMinElemVecSEQ::RunImpl() {
   const auto &vec = GetInput();
-  if (vec.empty()) {
-    GetOutput() = 0;
-    return true;
-  }
 
   int min_val = vec[0];
   for (size_t i = 1; i < vec.size(); i++) {

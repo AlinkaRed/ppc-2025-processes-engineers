@@ -16,7 +16,7 @@ RedkinaAMinElemVecMPI::RedkinaAMinElemVecMPI(const InType &in) {
 }
 
 bool RedkinaAMinElemVecMPI::ValidationImpl() {
-  return (GetOutput() == 0);
+  return !GetInput().empty() && (GetOutput() == 0);
 }
 
 bool RedkinaAMinElemVecMPI::PreProcessingImpl() {
@@ -33,13 +33,6 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
 
   int n = static_cast<int>(vec.size());
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-  if (n == 0) {
-    if (rank == 0) {
-      GetOutput() = 0;
-    }
-    return true;
-  }
 
   int local_size = n / size;
   int remainder = n % size;
