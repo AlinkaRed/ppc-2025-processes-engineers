@@ -519,7 +519,7 @@ TEST(redkina_a_min_elem_vec_mpi, minimal_elements_max_processes) {  // NOLINT
 TEST(redkina_a_min_elem_vec_mpi_branches_extra, validation_empty_vector) {
   InType vec = {};
   RedkinaAMinElemVecMPI task(vec);
-  EXPECT_FALSE(task.Validation());
+  EXPECT_TRUE(!task.Validation());
 }
 
 // Покрытие ветки: local_size == 0 && rank >= n
@@ -542,7 +542,7 @@ TEST(redkina_a_min_elem_vec_mpi_branches_extra, local_size_zero_rank_exceeds_n) 
 TEST(redkina_a_min_elem_vec_seq_branches_extra, validation_empty_vector) {
   InType vec = {};
   RedkinaAMinElemVecSEQ task(vec);
-  EXPECT_FALSE(task.Validation());
+  EXPECT_TRUE(!task.Validation());
 }
 
 }  // namespace redkina_a_min_elem_vec
