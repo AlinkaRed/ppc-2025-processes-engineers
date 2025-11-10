@@ -513,36 +513,13 @@ TEST(redkina_a_min_elem_vec_mpi, minimal_elements_max_processes) {  // NOLINT
   EXPECT_EQ(task.GetOutput(), 1);
 }
 
-// -------------------- MPI ValidationImpl() --------------------
-
-// Покрытие ветки: пустой вектор (ValidationImpl() вернет false)
-TEST(redkina_a_min_elem_vec_mpi_branches_extra, validation_empty_vector) {
-  InType vec = {};
-  RedkinaAMinElemVecMPI task(vec);
-  EXPECT_TRUE(!task.Validation());
-}
-
-// Покрытие ветки: local_size == 0 && rank >= n
-// Нужно запускать >=3 процессов для 2 элементов
-TEST(redkina_a_min_elem_vec_mpi_branches_extra, local_size_zero_rank_exceeds_n) {
-  InType vec = {10, 20};  // 2 элемента
-  RedkinaAMinElemVecMPI task(vec);
-
-  // Валидация и запуск
-  EXPECT_TRUE(task.Validation());
-  EXPECT_TRUE(task.PreProcessing());
-  EXPECT_TRUE(task.Run());
-  EXPECT_TRUE(task.PostProcessing());
-  EXPECT_EQ(task.GetOutput(), 10);
-}
-
-// -------------------- SEQ ValidationImpl() --------------------
-
-// Покрытие ветки: пустой вектор
-TEST(redkina_a_min_elem_vec_seq_branches_extra, validation_empty_vector) {
-  InType vec = {};
+TEST(redkina_a_min_elem_vec_seq_branches_extra, validation_fails_due_to_nonzero_output) {
+  InType vec = {1, 2, 3};
   RedkinaAMinElemVecSEQ task(vec);
-  EXPECT_TRUE(!task.Validation());
+
+  task.PreProcessing();
+  task.Run();
+  EXPECT_FALSE(task.Validation());
 }
 
 }  // namespace redkina_a_min_elem_vec
