@@ -102,7 +102,7 @@ const std::array<TestType, 13> kFunctionalTests = {
 };
 
 // Coverage Tests Data
-const std::array<TestType, 22> kCoverageTests = {
+const std::array<TestType, 35> kCoverageTests = {
     // Basic sequences
     std::make_tuple(14, std::vector<int>{1, 2, 3}),
     std::make_tuple(15, std::vector<int>{42}),
@@ -151,7 +151,31 @@ const std::array<TestType, 22> kCoverageTests = {
     std::make_tuple(32, std::vector<int>{42}),
     std::make_tuple(33, std::vector<int>{5, 3}),
     std::make_tuple(34, std::vector<int>{7}),
-    std::make_tuple(35, std::vector<int>{1})
+    std::make_tuple(35, std::vector<int>{1}),
+
+    // НОВЫЕ ТЕСТЫ ДЛЯ ПОКРЫТИЯ НЕПОКРЫТЫХ ВЕТОК MPI
+    
+    // Тесты для покрытия условия local_size == 0 && rank >= n (строка 58)
+    // Эти тесты должны покрыть случай, когда у процессов с высоким рангом нет элементов
+    std::make_tuple(36, std::vector<int>{10}), // 1 элемент, 4 процесса - покрывает rank >= n
+    std::make_tuple(37, std::vector<int>{8, 3}), // 2 элемента, 4 процесса
+    std::make_tuple(38, std::vector<int>{6, 9, 1}), // 3 элемента, 4 процесса
+    
+    // Тесты для разных распределений remainder в MPI
+    std::make_tuple(39, std::vector<int>{1, 2, 3, 4}), // remainder = 0, 4 элемента, 4 процесса
+    std::make_tuple(40, std::vector<int>{1, 2, 3, 4, 5}), // remainder = 1, 5 элементов, 4 процесса
+    std::make_tuple(41, std::vector<int>{1, 2, 3, 4, 5, 6}), // remainder = 2, 6 элементов, 4 процесса
+    std::make_tuple(42, std::vector<int>{1, 2, 3, 4, 5, 6, 7}), // remainder = 3, 7 элементов, 4 процесса
+    
+    // Тесты для SEQ: различные сценарии изменения min_val в цикле
+    std::make_tuple(43, std::vector<int>{1, 2, 3, 4, 5}), // min в начале, не меняется
+    std::make_tuple(44, std::vector<int>{2, 3, 4, 1, 5}), // min меняется один раз в конце
+    std::make_tuple(45, std::vector<int>{5, 4, 3, 2, 1}), // min меняется на каждой итерации
+    
+    // Дополнительные тесты для edge cases
+    std::make_tuple(46, std::vector<int>{10, 5, 8, 3, 7, 2, 9, 4}), // min в разных сегментах
+    std::make_tuple(47, std::vector<int>{-1, -2, -3, -4, -5}), // все отрицательные, min в конце
+    std::make_tuple(48, std::vector<int>{0, 0, 0, 0, 1}) // несколько нулей, min = 0
 };
 
 const auto kFunctionalTasksList =
