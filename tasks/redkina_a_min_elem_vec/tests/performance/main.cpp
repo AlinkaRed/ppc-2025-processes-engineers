@@ -35,7 +35,7 @@ class RedkinaAMinElemVecPerfTests : public ::testing::TestWithParam<size_t> {
     vec = GenerateRandomVector(vec_size);
   }
 
-  std::vector<int> GenerateRandomVector(size_t size) {
+  static std::vector<int> GenerateRandomVector(size_t size) {
     std::vector<int> result(size);
     std::random_device rd;
     std::mt19937 gen(rd());
