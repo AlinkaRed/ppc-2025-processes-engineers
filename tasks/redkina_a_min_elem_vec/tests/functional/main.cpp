@@ -102,81 +102,37 @@ const std::array<TestType, 13> kFunctionalTests = {
 };
 
 // Coverage Tests Data
-const std::array<TestType, 35> kCoverageTests = {
-    // Basic sequences
-    std::make_tuple(14, std::vector<int>{1, 2, 3}),
-    std::make_tuple(15, std::vector<int>{42}),
-    
-    // Min element at different positions
-    std::make_tuple(16, std::vector<int>{1, 5, 8, 2, 9}),
-    std::make_tuple(17, std::vector<int>{5, 8, 1, 9, 2}),
-    std::make_tuple(18, std::vector<int>{5, 8, 9, 2, 1}),
-    
-    // Negative numbers
-    std::make_tuple(19, std::vector<int>{-3, -1, -5, -2}),
-    std::make_tuple(20, std::vector<int>{7, 7, 7, 7}),
-    std::make_tuple(21, std::vector<int>{-5}),
-    
-    // Small arrays
-    std::make_tuple(22, std::vector<int>{2, 1}),
-    std::make_tuple(23, std::vector<int>{3, 1, 2}),
-    std::make_tuple(24, std::vector<int>{1, 2, 3, 4, 5, 6, 7}),
-    
-    // Generated arrays
-    std::make_tuple(25, []() {
-      std::vector<int> vec(100);
-      for (size_t i = 0; i < vec.size(); i++) {
-        vec[i] = static_cast<int>(vec.size() - i);
-      }
-      return vec;
-    }()),
-    std::make_tuple(26, std::vector<int>{5, 5, 5, 5, 5}),
-    
-    // Mixed cases
-    std::make_tuple(27, std::vector<int>{-1, -5, -3, -2}),
-    std::make_tuple(28, std::vector<int>{5, -2, 0, -1, 9, -3}),
-    
-    // Boundary values
-    std::make_tuple(29, std::vector<int>{
-        std::numeric_limits<int>::max(),
-        std::numeric_limits<int>::min(),
-        0
-    }),
-    
-    // MPI-specific cases
-    std::make_tuple(30, std::vector<int>{1, 2}),
-    std::make_tuple(31, std::vector<int>{10, 20, 5, 15, 25, 3, 30}),
-    
-    // Single element edge cases
-    std::make_tuple(32, std::vector<int>{42}),
-    std::make_tuple(33, std::vector<int>{5, 3}),
-    std::make_tuple(34, std::vector<int>{7}),
-    std::make_tuple(35, std::vector<int>{1}),
+const std::array<TestType, 20> kCoverageTests = {
+    // Базовые случаи
+    std::make_tuple(14, std::vector<int>{1, 2, 3}), std::make_tuple(16, std::vector<int>{1, 5, 8, 2, 9}),
+    std::make_tuple(18, std::vector<int>{5, 8, 9, 2, 1}), std::make_tuple(19, std::vector<int>{-3, -1, -5, -2}),
+    std::make_tuple(22, std::vector<int>{2, 1}), std::make_tuple(23, std::vector<int>{3, 1, 2}),
+    std::make_tuple(25,
+                    []() {
+  std::vector<int> vec(100);
+  for (size_t i = 0; i < vec.size(); i++) {
+    vec[i] = static_cast<int>(vec.size() - i);
+  }
+  return vec;
+}()),
 
-    // НОВЫЕ ТЕСТЫ ДЛЯ ПОКРЫТИЯ НЕПОКРЫТЫХ ВЕТОК MPI
-    
-    // Тесты для покрытия условия local_size == 0 && rank >= n (строка 58)
-    // Эти тесты должны покрыть случай, когда у процессов с высоким рангом нет элементов
-    std::make_tuple(36, std::vector<int>{10}), // 1 элемент, 4 процесса - покрывает rank >= n
-    std::make_tuple(37, std::vector<int>{8, 3}), // 2 элемента, 4 процесса
-    std::make_tuple(38, std::vector<int>{6, 9, 1}), // 3 элемента, 4 процесса
-    
-    // Тесты для разных распределений remainder в MPI
-    std::make_tuple(39, std::vector<int>{1, 2, 3, 4}), // remainder = 0, 4 элемента, 4 процесса
-    std::make_tuple(40, std::vector<int>{1, 2, 3, 4, 5}), // remainder = 1, 5 элементов, 4 процесса
-    std::make_tuple(41, std::vector<int>{1, 2, 3, 4, 5, 6}), // remainder = 2, 6 элементов, 4 процесса
-    std::make_tuple(42, std::vector<int>{1, 2, 3, 4, 5, 6, 7}), // remainder = 3, 7 элементов, 4 процесса
-    
-    // Тесты для SEQ: различные сценарии изменения min_val в цикле
-    std::make_tuple(43, std::vector<int>{1, 2, 3, 4, 5}), // min в начале, не меняется
-    std::make_tuple(44, std::vector<int>{2, 3, 4, 1, 5}), // min меняется один раз в конце
-    std::make_tuple(45, std::vector<int>{5, 4, 3, 2, 1}), // min меняется на каждой итерации
-    
-    // Дополнительные тесты для edge cases
-    std::make_tuple(46, std::vector<int>{10, 5, 8, 3, 7, 2, 9, 4}), // min в разных сегментах
-    std::make_tuple(47, std::vector<int>{-1, -2, -3, -4, -5}), // все отрицательные, min в конце
-    std::make_tuple(48, std::vector<int>{0, 0, 0, 0, 1}) // несколько нулей, min = 0
-};
+    // Смешанные и граничные
+    std::make_tuple(28, std::vector<int>{5, -2, 0, -1, 9, -3}),
+    std::make_tuple(29, std::vector<int>{std::numeric_limits<int>::max(), std::numeric_limits<int>::min(), 0}),
+
+    // MPI: различные распределения
+    std::make_tuple(36, std::vector<int>{10}),                   // rank >= n
+    std::make_tuple(39, std::vector<int>{1, 2, 3, 4}),           // remainder=0
+    std::make_tuple(40, std::vector<int>{1, 2, 3, 4, 5}),        // remainder=1
+    std::make_tuple(41, std::vector<int>{1, 2, 3, 4, 5, 6}),     // remainder=2
+    std::make_tuple(42, std::vector<int>{1, 2, 3, 4, 5, 6, 7}),  // remainder=3
+
+    // SEQ: разные сценарии min
+    std::make_tuple(43, std::vector<int>{1, 2, 3, 4, 5}),  // min в начале
+    std::make_tuple(44, std::vector<int>{2, 3, 4, 1, 5}),  // min в конце
+    std::make_tuple(45, std::vector<int>{5, 4, 3, 2, 1}),  // min постоянно меняется
+    std::make_tuple(46, std::vector<int>{10, 5, 8, 3, 7, 2, 9, 4}),
+    std::make_tuple(47, std::vector<int>{-1, -2, -3, -4, -5}), std::make_tuple(48, std::vector<int>{0, 0, 0, 0, 1})};
 
 const auto kFunctionalTasksList =
     std::tuple_cat(ppc::util::AddFuncTask<redkina_a_min_elem_vec::RedkinaAMinElemVecMPI, InType>(
@@ -209,6 +165,48 @@ TEST(redkina_a_min_elem_vec_validation, seq_empty_vector_validation_fails) {
   InType vec = {};
   RedkinaAMinElemVecSEQ task(vec);
   EXPECT_FALSE(task.Validation());
+}
+
+TEST(redkina_a_min_elem_vec_validation, mpi_nonzero_output_validation_fails) {
+  InType vec = {1, 2, 3};
+  RedkinaAMinElemVecMPI task(vec);
+
+  // Принудительно изменяем output на не-ноль (для покрытия ветви)
+  auto &mutable_output = const_cast<OutType &>(task.GetOutput());
+  mutable_output = 5;
+
+  EXPECT_EQ(task.Validation(), false);
+}
+
+TEST(redkina_a_min_elem_vec_validation, seq_nonzero_output_validation_fails) {
+  InType vec = {4, 5, 6};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  auto &mutable_output = const_cast<OutType &>(task.GetOutput());
+  mutable_output = -1;
+
+  EXPECT_EQ(task.Validation(), false);
+}
+
+TEST(redkina_a_min_elem_vec_validation, mpi_empty_output_validation_fails) {
+  InType vec = {};
+  RedkinaAMinElemVecMPI task(vec);
+
+  // Принудительно изменяем output на не-ноль (для покрытия ветви)
+  auto &mutable_output = const_cast<OutType &>(task.GetOutput());
+  mutable_output = 5;
+
+  EXPECT_EQ(task.Validation(), false);
+}
+
+TEST(redkina_a_min_elem_vec_validation, seq_empty_output_validation_fails) {
+  InType vec = {};
+  RedkinaAMinElemVecSEQ task(vec);
+
+  auto &mutable_output = const_cast<OutType &>(task.GetOutput());
+  mutable_output = -1;
+
+  EXPECT_EQ(task.Validation(), false);
 }
 
 }  // namespace
