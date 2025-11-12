@@ -22,7 +22,7 @@ static int MinElement(const std::vector<int> &vec) {
     return 0;
   }
   int min_val = vec[0];
-  for (size_t i = 1; i < vec.size(); i++) {
+  for (size_t i = 1; i < vec.size(); ++i) {
     if (vec[i] < min_val) {
       min_val = vec[i];
     }
@@ -37,21 +37,17 @@ class RedkinaAMinElemVecPerfTests : public ::testing::TestWithParam<size_t> {
     vec = GenerateRandomVector(vec_size);
   }
 
-  std::vector<int> GenerateRandomVector(size_t size) {
+  static std::vector<int> GenerateRandomVector(size_t size) {
     std::vector<int> result(size);
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> dis(-1000000, 1000000);
-
-    for (size_t i = 0; i < size; i++) {
+    std::uniform_int_distribution<int> dis(-1'000'000, 1'000'000);
+    for (size_t i = 0; i < size; ++i) {
       result[i] = dis(gen);
     }
-
-    // Гарантируем, что есть минимальный элемент в известной позиции
     if (size > 0) {
-      result[size / 2] = -2000000;  // Очень маленькое значение в середине
+      result[size / 2] = -2000000;
     }
-
     return result;
   }
 
@@ -67,30 +63,30 @@ TEST_P(RedkinaAMinElemVecPerfTests, TestPipelineRun) {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  int expected = MinElement(vec);
+  const int expected = MinElement(vec);
 
-  // MPI version
   InType mpi_input = vec;
   RedkinaAMinElemVecMPI mpi_task(mpi_input);
   mpi_task.GetStateOfTesting() = ppc::task::StateOfTesting::kPerf;
 
-  auto start_mpi = std::chrono::high_resolution_clock::now();
-  bool mpi_success = mpi_task.Validation() && mpi_task.PreProcessing() && mpi_task.Run() && mpi_task.PostProcessing();
-  auto end_mpi = std::chrono::high_resolution_clock::now();
-  double mpi_time = std::chrono::duration<double>(end_mpi - start_mpi).count();
+  const auto start_mpi = std::chrono::high_resolution_clock::now();
+  const bool mpi_success =
+      mpi_task.Validation() && mpi_task.PreProcessing() && mpi_task.Run() && mpi_task.PostProcessing();
+  const auto end_mpi = std::chrono::high_resolution_clock::now();
+  const double mpi_time = std::chrono::duration<double>(end_mpi - start_mpi).count();
 
   ASSERT_TRUE(mpi_success) << "MPI pipeline failed";
   ASSERT_EQ(mpi_task.GetOutput(), expected) << "MPI pipeline result incorrect";
 
-  // Sequential version
   InType seq_input = vec;
   RedkinaAMinElemVecSEQ seq_task(seq_input);
   seq_task.GetStateOfTesting() = ppc::task::StateOfTesting::kPerf;
 
-  auto start_seq = std::chrono::high_resolution_clock::now();
-  bool seq_success = seq_task.Validation() && seq_task.PreProcessing() && seq_task.Run() && seq_task.PostProcessing();
-  auto end_seq = std::chrono::high_resolution_clock::now();
-  double seq_time = std::chrono::duration<double>(end_seq - start_seq).count();
+  const auto start_seq = std::chrono::high_resolution_clock::now();
+  const bool seq_success =
+      seq_task.Validation() && seq_task.PreProcessing() && seq_task.Run() && seq_task.PostProcessing();
+  const auto end_seq = std::chrono::high_resolution_clock::now();
+  const double seq_time = std::chrono::duration<double>(end_seq - start_seq).count();
 
   ASSERT_TRUE(seq_success) << "SEQ pipeline failed";
   ASSERT_EQ(seq_task.GetOutput(), expected) << "SEQ pipeline result incorrect";
@@ -105,31 +101,31 @@ TEST_P(RedkinaAMinElemVecPerfTests, TestTaskRun) {
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  int expected = MinElement(vec);
+  const int expected = MinElement(vec);
 
-  // MPI version
   InType mpi_input = vec;
   RedkinaAMinElemVecMPI mpi_task(mpi_input);
   mpi_task.GetStateOfTesting() = ppc::task::StateOfTesting::kPerf;
-
   ASSERT_TRUE(mpi_task.Validation() && mpi_task.PreProcessing());
-  auto start_mpi = std::chrono::high_resolution_clock::now();
-  bool mpi_run = mpi_task.Run();
-  auto end_mpi = std::chrono::high_resolution_clock::now();
-  double mpi_time = std::chrono::duration<double>(end_mpi - start_mpi).count();
+
+  const auto start_mpi = std::chrono::high_resolution_clock::now();
+  const bool mpi_run = mpi_task.Run();
+  const auto end_mpi = std::chrono::high_resolution_clock::now();
+  const double mpi_time = std::chrono::duration<double>(end_mpi - start_mpi).count();
+
   ASSERT_TRUE(mpi_run && mpi_task.PostProcessing());
   ASSERT_EQ(mpi_task.GetOutput(), expected) << "MPI task run result incorrect";
 
-  // Sequential version
   InType seq_input = vec;
   RedkinaAMinElemVecSEQ seq_task(seq_input);
   seq_task.GetStateOfTesting() = ppc::task::StateOfTesting::kPerf;
-
   ASSERT_TRUE(seq_task.Validation() && seq_task.PreProcessing());
-  auto start_seq = std::chrono::high_resolution_clock::now();
-  bool seq_run = seq_task.Run();
-  auto end_seq = std::chrono::high_resolution_clock::now();
-  double seq_time = std::chrono::duration<double>(end_seq - start_seq).count();
+
+  const auto start_seq = std::chrono::high_resolution_clock::now();
+  const bool seq_run = seq_task.Run();
+  const auto end_seq = std::chrono::high_resolution_clock::now();
+  const double seq_time = std::chrono::duration<double>(end_seq - start_seq).count();
+
   ASSERT_TRUE(seq_run && seq_task.PostProcessing());
   ASSERT_EQ(seq_task.GetOutput(), expected) << "SEQ task run result incorrect";
 

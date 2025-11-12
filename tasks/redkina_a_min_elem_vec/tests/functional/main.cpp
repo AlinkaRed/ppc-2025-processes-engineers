@@ -27,7 +27,7 @@ class RedkinaAMinElemVecFuncTests : public ppc::util::BaseRunFuncTests<InType, O
 
  protected:
   void SetUp() override {
-    TestType params = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
+    const TestType &params = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
     test_vector_ = std::get<1>(params);
   }
 
@@ -37,7 +37,7 @@ class RedkinaAMinElemVecFuncTests : public ppc::util::BaseRunFuncTests<InType, O
     }
 
     int expected_result = test_vector_[0];
-    for (size_t i = 1; i < test_vector_.size(); i++) {
+    for (size_t i = 1; i < test_vector_.size(); ++i) {
       if (test_vector_[i] < expected_result) {
         expected_result = test_vector_[i];
       }
@@ -55,84 +55,72 @@ class RedkinaAMinElemVecFuncTests : public ppc::util::BaseRunFuncTests<InType, O
 
 namespace {
 
-// Functional Tests
 TEST_P(RedkinaAMinElemVecFuncTests, FunctionalTests) {
   ExecuteTest(GetParam());
 }
 
-// Coverage Tests
 TEST_P(RedkinaAMinElemVecFuncTests, CoverageTests) {
   ExecuteTest(GetParam());
 }
 
-// Functional Tests Data
 const std::array<TestType, 13> kFunctionalTests = {
-    // Basic positive numbers
     std::make_tuple(1, std::vector<int>{5, 2, 8, 1, 9, 3}),
     std::make_tuple(2, std::vector<int>{-5, -2, -8, -1, -9, -3}),
     std::make_tuple(3, std::vector<int>{5, -2, 0, -1, 9, -3}),
-    
-    // Edge cases: single element and identical values
+
     std::make_tuple(4, std::vector<int>{42}),
     std::make_tuple(5, std::vector<int>{7, 7, 7, 7, 7}),
     std::make_tuple(6, std::vector<int>{5, 2, 5, 1, 2, 1}),
-    
-    // Large numbers and zeros
+
     std::make_tuple(7, std::vector<int>{1000, 500, 2000, 100, 3000}),
     std::make_tuple(8, std::vector<int>{10, 0, 20, -5, 0, 15}),
-    
-    // Min element position variations
+
     std::make_tuple(9, std::vector<int>{-10, 5, 8, 12, 25}),
     std::make_tuple(10, std::vector<int>{15, 8, 12, 5, -3}),
     std::make_tuple(11, std::vector<int>{15, 8, -5, 12, 10}),
-    
-    // Large vector and boundary values
-    std::make_tuple(12, []() {
-      std::vector<int> vec(1000);
-      for (size_t i = 0; i < vec.size(); i++) {
-        vec[i] = static_cast<int>(vec.size() - i);
-      }
-      return vec;
-    }()),
-    std::make_tuple(13, std::vector<int>{
-        std::numeric_limits<int>::max(),
-        std::numeric_limits<int>::min(),
-        0, -100, 100
-    })
-};
 
-// Coverage Tests Data
+    std::make_tuple(12,
+                    [] {
+  std::vector<int> vec(1000);
+  for (size_t i = 0; i < vec.size(); ++i) {
+    vec[i] = static_cast<int>(vec.size() - i);
+  }
+  return vec;
+}()),
+    std::make_tuple(13,
+                    std::vector<int>{std::numeric_limits<int>::max(), std::numeric_limits<int>::min(), 0, -100, 100})};
+
 const std::array<TestType, 20> kCoverageTests = {
-    // Базовые случаи
-    std::make_tuple(14, std::vector<int>{1, 2, 3}), std::make_tuple(16, std::vector<int>{1, 5, 8, 2, 9}),
-    std::make_tuple(18, std::vector<int>{5, 8, 9, 2, 1}), std::make_tuple(19, std::vector<int>{-3, -1, -5, -2}),
-    std::make_tuple(22, std::vector<int>{2, 1}), std::make_tuple(23, std::vector<int>{3, 1, 2}),
+    std::make_tuple(14, std::vector<int>{1, 2, 3}),
+    std::make_tuple(16, std::vector<int>{1, 5, 8, 2, 9}),
+    std::make_tuple(18, std::vector<int>{5, 8, 9, 2, 1}),
+    std::make_tuple(19, std::vector<int>{-3, -1, -5, -2}),
+    std::make_tuple(22, std::vector<int>{2, 1}),
+    std::make_tuple(23, std::vector<int>{3, 1, 2}),
     std::make_tuple(25,
-                    []() {
+                    [] {
   std::vector<int> vec(100);
-  for (size_t i = 0; i < vec.size(); i++) {
+  for (size_t i = 0; i < vec.size(); ++i) {
     vec[i] = static_cast<int>(vec.size() - i);
   }
   return vec;
 }()),
 
-    // Смешанные и граничные
     std::make_tuple(28, std::vector<int>{5, -2, 0, -1, 9, -3}),
     std::make_tuple(29, std::vector<int>{std::numeric_limits<int>::max(), std::numeric_limits<int>::min(), 0}),
 
-    // MPI: различные распределения
-    std::make_tuple(36, std::vector<int>{10}),                   // rank >= n
-    std::make_tuple(39, std::vector<int>{1, 2, 3, 4}),           // remainder=0
-    std::make_tuple(40, std::vector<int>{1, 2, 3, 4, 5}),        // remainder=1
-    std::make_tuple(41, std::vector<int>{1, 2, 3, 4, 5, 6}),     // remainder=2
-    std::make_tuple(42, std::vector<int>{1, 2, 3, 4, 5, 6, 7}),  // remainder=3
+    std::make_tuple(36, std::vector<int>{10}),
+    std::make_tuple(39, std::vector<int>{1, 2, 3, 4}),
+    std::make_tuple(40, std::vector<int>{1, 2, 3, 4, 5}),
+    std::make_tuple(41, std::vector<int>{1, 2, 3, 4, 5, 6}),
+    std::make_tuple(42, std::vector<int>{1, 2, 3, 4, 5, 6, 7}),
 
-    // SEQ: разные сценарии min
-    std::make_tuple(43, std::vector<int>{1, 2, 3, 4, 5}),  // min в начале
-    std::make_tuple(44, std::vector<int>{2, 3, 4, 1, 5}),  // min в конце
-    std::make_tuple(45, std::vector<int>{5, 4, 3, 2, 1}),  // min постоянно меняется
+    std::make_tuple(43, std::vector<int>{1, 2, 3, 4, 5}),
+    std::make_tuple(44, std::vector<int>{2, 3, 4, 1, 5}),
+    std::make_tuple(45, std::vector<int>{5, 4, 3, 2, 1}),
     std::make_tuple(46, std::vector<int>{10, 5, 8, 3, 7, 2, 9, 4}),
-    std::make_tuple(47, std::vector<int>{-1, -2, -3, -4, -5}), std::make_tuple(48, std::vector<int>{0, 0, 0, 0, 1})};
+    std::make_tuple(47, std::vector<int>{-1, -2, -3, -4, -5}),
+    std::make_tuple(48, std::vector<int>{0, 0, 0, 0, 1})};
 
 const auto kFunctionalTasksList =
     std::tuple_cat(ppc::util::AddFuncTask<redkina_a_min_elem_vec::RedkinaAMinElemVecMPI, InType>(
@@ -154,7 +142,6 @@ inline const auto kPerfTestName = RedkinaAMinElemVecFuncTests::PrintFuncTestName
 INSTANTIATE_TEST_SUITE_P(Functional, RedkinaAMinElemVecFuncTests, kFunctionalGtestValues, kPerfTestName);
 INSTANTIATE_TEST_SUITE_P(Coverage, RedkinaAMinElemVecFuncTests, kCoverageGtestValues, kPerfTestName);
 
-// Validation tests for empty vector
 TEST(redkina_a_min_elem_vec_validation, mpi_empty_vector_validation_fails) {
   InType vec = {};
   RedkinaAMinElemVecMPI task(vec);
