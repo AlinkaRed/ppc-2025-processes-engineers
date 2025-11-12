@@ -15,7 +15,7 @@ RedkinaAMinElemVecSEQ::RedkinaAMinElemVecSEQ(const InType &in) {
 }
 
 bool RedkinaAMinElemVecSEQ::ValidationImpl() {
-  return !GetInput().empty() && (GetOutput() == 0);
+  return !GetInput().empty();
 }
 
 bool RedkinaAMinElemVecSEQ::PreProcessingImpl() {

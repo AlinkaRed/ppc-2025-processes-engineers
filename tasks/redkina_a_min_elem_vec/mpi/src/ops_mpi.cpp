@@ -16,7 +16,7 @@ RedkinaAMinElemVecMPI::RedkinaAMinElemVecMPI(const InType &in) {
 }
 
 bool RedkinaAMinElemVecMPI::ValidationImpl() {
-  return !GetInput().empty() && (GetOutput() == 0);
+  return !GetInput().empty();
 }
 
 bool RedkinaAMinElemVecMPI::PreProcessingImpl() {

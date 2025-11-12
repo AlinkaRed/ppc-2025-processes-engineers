@@ -167,48 +167,6 @@ TEST(redkina_a_min_elem_vec_validation, seq_empty_vector_validation_fails) {
   EXPECT_FALSE(task.Validation());
 }
 
-TEST(redkina_a_min_elem_vec_validation, mpi_nonzero_output_validation_fails) {
-  InType vec = {1, 2, 3};
-  RedkinaAMinElemVecMPI task(vec);
-
-  // Принудительно изменяем output на не-ноль (для покрытия ветви)
-  auto &mutable_output = const_cast<OutType &>(task.GetOutput());
-  mutable_output = 5;
-
-  EXPECT_EQ(task.Validation(), false);
-}
-
-TEST(redkina_a_min_elem_vec_validation, seq_nonzero_output_validation_fails) {
-  InType vec = {4, 5, 6};
-  RedkinaAMinElemVecSEQ task(vec);
-
-  auto &mutable_output = const_cast<OutType &>(task.GetOutput());
-  mutable_output = -1;
-
-  EXPECT_EQ(task.Validation(), false);
-}
-
-TEST(redkina_a_min_elem_vec_validation, mpi_empty_output_validation_fails) {
-  InType vec = {};
-  RedkinaAMinElemVecMPI task(vec);
-
-  // Принудительно изменяем output на не-ноль (для покрытия ветви)
-  auto &mutable_output = const_cast<OutType &>(task.GetOutput());
-  mutable_output = 5;
-
-  EXPECT_EQ(task.Validation(), false);
-}
-
-TEST(redkina_a_min_elem_vec_validation, seq_empty_output_validation_fails) {
-  InType vec = {};
-  RedkinaAMinElemVecSEQ task(vec);
-
-  auto &mutable_output = const_cast<OutType &>(task.GetOutput());
-  mutable_output = -1;
-
-  EXPECT_EQ(task.Validation(), false);
-}
-
 }  // namespace
 
 }  // namespace redkina_a_min_elem_vec
