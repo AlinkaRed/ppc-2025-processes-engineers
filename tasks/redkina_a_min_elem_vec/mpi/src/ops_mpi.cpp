@@ -34,35 +34,35 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
   int n = static_cast<int>(vec.size());
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  int local_size = n / size;
+  int size_l = n / size;
   int remainder = n % size;
 
   int start_idx = 0;
   int end_idx = 0;
 
   if (rank < remainder) {
-    start_idx = rank * (local_size + 1);
-    end_idx = start_idx + local_size + 1;
+    start_idx = rank * (size_l + 1);
+    end_idx = start_idx + size_l + 1;
   } else {
-    start_idx = (remainder * (local_size + 1)) + ((rank - remainder) * local_size);
-    end_idx = start_idx + local_size;
+    start_idx = (remainder * (size_l + 1)) + ((rank - remainder) * size_l);
+    end_idx = start_idx + size_l;
   }
 
-  int local_min = INT_MAX;
+  int min_l = INT_MAX;
   for (int i = start_idx; i < end_idx && i < n; i++) {
-    if (vec[i] < local_min) {  // NOLINT
-      local_min = vec[i];
+    if (vec[i] < min_l) {  // NOLINT
+      min_l = vec[i];
     }
   }
 
-  if (local_size == 0 && rank >= n) {
-    local_min = INT_MAX;
+  if (size_l == 0 && rank >= n) {
+    min_l = INT_MAX;
   }
 
-  int global_min = 0;
-  MPI_Allreduce(&local_min, &global_min, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+  int min_g = 0;
+  MPI_Allreduce(&min_l, &min_g, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 
-  GetOutput() = global_min;
+  GetOutput() = min_g;
 
   return true;
 }

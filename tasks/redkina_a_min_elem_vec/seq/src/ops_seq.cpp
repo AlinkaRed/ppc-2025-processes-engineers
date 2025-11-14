@@ -25,14 +25,14 @@ bool RedkinaAMinElemVecSEQ::PreProcessingImpl() {
 bool RedkinaAMinElemVecSEQ::RunImpl() {
   const auto &vec = GetInput();
 
-  int min_val = vec[0];
+  int minimum = vec[0];
   for (size_t i = 1; i < vec.size(); i++) {
-    if (vec[i] < min_val) {  // NOLINT
-      min_val = vec[i];
+    if (vec[i] < minimum) {  // NOLINT
+      minimum = vec[i];
     }
   }
 
-  GetOutput() = min_val;
+  GetOutput() = minimum;
   return true;
 }
 
