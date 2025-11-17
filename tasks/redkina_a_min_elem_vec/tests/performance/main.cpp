@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <random>
 #include <vector>
 
@@ -14,7 +15,7 @@ namespace redkina_a_min_elem_vec {
 class RedkinaAMinElemVecRunPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
   const size_t kCount_ = 100000000;
 
-  InType input_data_{};
+  InType input_data_;
 
   void SetUp() override {
     input_data_ = GenerateRandomVector(kCount_);

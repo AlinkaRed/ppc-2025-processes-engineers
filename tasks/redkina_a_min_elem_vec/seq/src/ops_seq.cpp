@@ -1,6 +1,7 @@
 #include "redkina_a_min_elem_vec/seq/include/ops_seq.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <vector>
 
 #include "redkina_a_min_elem_vec/common/include/common.hpp"

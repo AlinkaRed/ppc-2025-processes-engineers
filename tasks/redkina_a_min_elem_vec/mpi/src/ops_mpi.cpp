@@ -3,6 +3,7 @@
 #include <mpi.h>
 
 #include <algorithm>
+#include <climits>
 #include <vector>
 
 #include "redkina_a_min_elem_vec/common/include/common.hpp"
