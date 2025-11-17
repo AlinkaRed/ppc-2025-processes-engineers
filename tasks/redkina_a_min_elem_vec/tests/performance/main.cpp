@@ -13,8 +13,8 @@ namespace redkina_a_min_elem_vec {
 
 class RedkinaAMinElemVecRunPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
   const size_t kCount_ = 100000000;
-  InType input_data_;
-  int expected_result_;
+  InType input_data_{};
+  int expected_result_ = 0;
 
   void SetUp() override {
     input_data_ = GenerateRandomVector(kCount_);

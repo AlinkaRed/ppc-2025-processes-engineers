@@ -35,6 +35,12 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
   int n = static_cast<int>(vec.size());
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+  std::vector<int> local_vec(n);
+  if (rank == 0) {
+    local_vec = vec;
+  }
+  MPI_Bcast(local_vec.data(), n, MPI_INT, 0, MPI_COMM_WORLD);
+
   int size_l = n / size;
   int remainder = n % size;
 
@@ -51,7 +57,7 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
 
   int min_l = INT_MAX;
   for (int i = start_idx; i < end_idx && i < n; i++) {
-    min_l = std::min(min_l, vec[i]);
+    min_l = std::min(min_l, local_vec[i]);
   }
 
   if (size_l == 0 && rank >= n) {
