@@ -2,7 +2,7 @@
 
 #include <mpi.h>
 
-#include <climits>
+#include <algorithm>
 #include <vector>
 
 #include "redkina_a_min_elem_vec/common/include/common.hpp"
@@ -50,9 +50,7 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
 
   int min_l = INT_MAX;
   for (int i = start_idx; i < end_idx && i < n; i++) {
-    if (vec[i] < min_l) {  // NOLINT
-      min_l = vec[i];
-    }
+    min_l = std::min(min_l, vec[i]);
   }
 
   if (size_l == 0 && rank >= n) {

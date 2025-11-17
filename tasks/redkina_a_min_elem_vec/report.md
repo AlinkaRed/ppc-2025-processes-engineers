@@ -28,11 +28,10 @@
 
 ## Описание алгоритма (последовательная версия)
 
-  1. Инициализировать переменную `min_val` первым элементом вектора.  
+  1. Инициализировать переменную `minimum` первым элементом вектора.  
   2. Для каждого последующего элемента `v[i]`:  
-    - Сравнить его с текущим `min_val`.  
-    - Если `v[i] < min_val`, обновить `min_val`.  
-  3. Вернуть значение `min_val`.
+    - Выбрать минимальное между `minimum` и `v[i]` и записать в `minimum`.
+  3. Вернуть значение `minimum`.
 
 **Сложность:** O(n), где *n* — размер вектора.
 
@@ -44,9 +43,7 @@ bool RedkinaAMinElemVecSEQ::RunImpl() {
 
   int minimum = vec[0];
   for (size_t i = 1; i < vec.size(); i++) {
-    if (vec[i] < minimum) {  // NOLINT
-      minimum = vec[i];
-    }
+    minimum = std::min(minimum, vec[i]);
   }
 
   GetOutput() = minimum;
@@ -97,9 +94,7 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
 
   int min_l = INT_MAX;
   for (int i = start_idx; i < end_idx && i < n; i++) {
-    if (vec[i] < min_l) {  // NOLINT
-      min_l = vec[i];
-    }
+    min_l = std::min(min_l, vec[i]);
   }
 
   if (size_l == 0 && rank >= n) {
@@ -172,19 +167,19 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
 
 | Режим | Процессы | Время, с | 
 |-------|----------|----------|
-| seq   | 1        | 0.021    | 
-| mpi   | 2        | 0.033    | 
-| mpi   | 3        | 0.021    | 
-| mpi   | 4        | 0.025    | 
+| seq   | 1        | 0.045    | 
+| mpi   | 2        | 0.032    | 
+| mpi   | 3        | 0.026    | 
+| mpi   | 4        | 0.027    | 
 
 **Время выполнения pipeline**
 
 | Режим | Процессы | Время, с | 
 |-------|----------|----------|
-| seq   | 1        | 0.022    | 
-| mpi   | 2        | 0.033    | 
-| mpi   | 3        | 0.058    | 
-| mpi   | 4        | 0.030    | 
+| seq   | 1        | 0.060    | 
+| mpi   | 2        | 0.059    | 
+| mpi   | 3        | 0.060    | 
+| mpi   | 4        | 0.060    | 
 
 **Результат:** Все тесты успешно пройдены.
 
@@ -309,17 +304,16 @@ bool RedkinaAMinElemVecSEQ::PreProcessingImpl() {
 
 bool RedkinaAMinElemVecSEQ::RunImpl() {
   const auto &vec = GetInput();
-
+  
   int minimum = vec[0];
   for (size_t i = 1; i < vec.size(); i++) {
-    if (vec[i] < minimum) {  // NOLINT
-      minimum = vec[i];
-    }
+    minimum = std::min(minimum, vec[i]);
   }
 
   GetOutput() = minimum;
   return true;
 }
+
 
 bool RedkinaAMinElemVecSEQ::PostProcessingImpl() {
   return true;
@@ -382,9 +376,7 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
 
   int min_l = INT_MAX;
   for (int i = start_idx; i < end_idx && i < n; i++) {
-    if (vec[i] < min_l) {  // NOLINT
-      min_l = vec[i];
-    }
+    min_l = std::min(min_l, vec[i]);
   }
 
   if (size_l == 0 && rank >= n) {

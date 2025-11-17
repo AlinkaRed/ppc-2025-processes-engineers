@@ -33,13 +33,7 @@ class RedkinaAMinElemVecFuncTests : public ppc::util::BaseRunFuncTests<InType, O
     if (test_vector_.empty()) {
       return false;
     }
-
-    int expected_result = test_vector_[0];
-    for (size_t i = 1; i < test_vector_.size(); ++i) {
-      if (test_vector_[i] < expected_result) {  // NOLINT
-        expected_result = test_vector_[i];
-      }
-    }
+    int expected_result = *std::min_element(test_vector_.begin(), test_vector_.end());
     return output_data == expected_result;
   }
 

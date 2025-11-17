@@ -1,38 +1,23 @@
 #include <gtest/gtest.h>
-#include <mpi.h>
 
-#include <chrono>
-#include <cstddef>
-#include <iostream>
+#include <algorithm>
 #include <random>
-#include <string>
 #include <vector>
 
 #include "redkina_a_min_elem_vec/common/include/common.hpp"
 #include "redkina_a_min_elem_vec/mpi/include/ops_mpi.hpp"
 #include "redkina_a_min_elem_vec/seq/include/ops_seq.hpp"
-#include "task/include/task.hpp"
+#include "util/include/perf_test_util.hpp"
 
 namespace redkina_a_min_elem_vec {
 
-static int MinElement(const std::vector<int> &vec) {
-  if (vec.empty()) {
-    return 0;
-  }
-  int min_val = vec[0];
-  for (size_t i = 1; i < vec.size(); ++i) {
-    if (vec[i] < min_val) {  // NOLINT
-      min_val = vec[i];
-    }
-  }
-  return min_val;
-}
+class RedkinaAMinElemVecRunPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
+  const size_t kCount_ = 100000000;
 
-class RedkinaAMinElemVecPerfTests : public ::testing::TestWithParam<size_t> {
- protected:
+  InType input_data_{};
+
   void SetUp() override {
-    vec_size = GetParam();
-    vec = GenerateRandomVector(vec_size);
+    input_data_ = GenerateRandomVector(kCount_);
   }
 
   static std::vector<int> GenerateRandomVector(size_t size) {
@@ -49,89 +34,27 @@ class RedkinaAMinElemVecPerfTests : public ::testing::TestWithParam<size_t> {
     return result;
   }
 
-  std::vector<int> vec;
-  size_t vec_size = 0;
+  bool CheckTestOutputData(OutType &output_data) final {
+    int expected = *std::min_element(input_data_.begin(), input_data_.end());
+    return output_data == expected;
+  }
+
+  InType GetTestInputData() final {
+    return input_data_;
+  }
 };
 
-static std::string PrintTestParam(const testing::TestParamInfo<size_t> &info) {
-  return "size_" + std::to_string(info.param);
+TEST_P(RedkinaAMinElemVecRunPerfTests, RunPerfModes) {
+  ExecuteTest(GetParam());
 }
 
-TEST_P(RedkinaAMinElemVecPerfTests, TestPipelineRun) {
-  int rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+const auto kAllPerfTasks = ppc::util::MakeAllPerfTasks<InType, RedkinaAMinElemVecMPI, RedkinaAMinElemVecSEQ>(
+    PPC_SETTINGS_redkina_a_min_elem_vec);
 
-  int expected = MinElement(vec);
+const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 
-  InType mpi_input = vec;
-  RedkinaAMinElemVecMPI mpi_task(mpi_input);
-  mpi_task.GetStateOfTesting() = ppc::task::StateOfTesting::kPerf;
+const auto kPerfTestName = RedkinaAMinElemVecRunPerfTests::CustomPerfTestName;
 
-  auto start_mpi = std::chrono::high_resolution_clock::now();
-  bool mpi_success = mpi_task.Validation() && mpi_task.PreProcessing() && mpi_task.Run() && mpi_task.PostProcessing();
-  auto end_mpi = std::chrono::high_resolution_clock::now();
-  double mpi_time = std::chrono::duration<double>(end_mpi - start_mpi).count();
-
-  ASSERT_TRUE(mpi_success) << "MPI pipeline failed";
-  ASSERT_EQ(mpi_task.GetOutput(), expected) << "MPI pipeline result incorrect";
-
-  InType seq_input = vec;
-  RedkinaAMinElemVecSEQ seq_task(seq_input);
-  seq_task.GetStateOfTesting() = ppc::task::StateOfTesting::kPerf;
-
-  auto start_seq = std::chrono::high_resolution_clock::now();
-  bool seq_success = seq_task.Validation() && seq_task.PreProcessing() && seq_task.Run() && seq_task.PostProcessing();
-  auto end_seq = std::chrono::high_resolution_clock::now();
-  double seq_time = std::chrono::duration<double>(end_seq - start_seq).count();
-
-  ASSERT_TRUE(seq_success) << "SEQ pipeline failed";
-  ASSERT_EQ(seq_task.GetOutput(), expected) << "SEQ pipeline result incorrect";
-
-  if (rank == 0) {
-    std::cout << "redkina_a_min_elem_vec_seq_enabled:pipeline:" << seq_time << '\n';
-    std::cout << "redkina_a_min_elem_vec_mpi_enabled:pipeline:" << mpi_time << '\n';
-  }
-}
-
-TEST_P(RedkinaAMinElemVecPerfTests, TestTaskRun) {
-  int rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  int expected = MinElement(vec);
-
-  InType mpi_input = vec;
-  RedkinaAMinElemVecMPI mpi_task(mpi_input);
-  mpi_task.GetStateOfTesting() = ppc::task::StateOfTesting::kPerf;
-
-  ASSERT_TRUE(mpi_task.Validation() && mpi_task.PreProcessing());
-  auto start_mpi = std::chrono::high_resolution_clock::now();
-  bool mpi_run = mpi_task.Run();
-  auto end_mpi = std::chrono::high_resolution_clock::now();
-  double mpi_time = std::chrono::duration<double>(end_mpi - start_mpi).count();
-  ASSERT_TRUE(mpi_run && mpi_task.PostProcessing());
-  ASSERT_EQ(mpi_task.GetOutput(), expected) << "MPI task run result incorrect";
-
-  InType seq_input = vec;
-  RedkinaAMinElemVecSEQ seq_task(seq_input);
-  seq_task.GetStateOfTesting() = ppc::task::StateOfTesting::kPerf;
-
-  ASSERT_TRUE(seq_task.Validation() && seq_task.PreProcessing());
-  auto start_seq = std::chrono::high_resolution_clock::now();
-  bool seq_run = seq_task.Run();
-  auto end_seq = std::chrono::high_resolution_clock::now();
-  double seq_time = std::chrono::duration<double>(end_seq - start_seq).count();
-  ASSERT_TRUE(seq_run && seq_task.PostProcessing());
-  ASSERT_EQ(seq_task.GetOutput(), expected) << "SEQ task run result incorrect";
-
-  if (rank == 0) {
-    std::cout << "redkina_a_min_elem_vec_seq_enabled:task_run:" << seq_time << '\n';
-    std::cout << "redkina_a_min_elem_vec_mpi_enabled:task_run:" << mpi_time << '\n';
-  }
-}
-
-const std::vector<size_t> kTestParams = {100000000};
-
-INSTANTIATE_TEST_SUITE_P(redkina_a_min_elem_vec, RedkinaAMinElemVecPerfTests, ::testing::ValuesIn(kTestParams),
-                         PrintTestParam);
+INSTANTIATE_TEST_SUITE_P(RunModeTests, RedkinaAMinElemVecRunPerfTests, kGtestValues, kPerfTestName);
 
 }  // namespace redkina_a_min_elem_vec
