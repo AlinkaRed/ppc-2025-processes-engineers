@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <random>
 #include <vector>
@@ -14,30 +13,33 @@ namespace redkina_a_min_elem_vec {
 
 class RedkinaAMinElemVecRunPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
   const size_t kCount_ = 100000000;
-
   InType input_data_;
+  int expected_result_;
 
   void SetUp() override {
     input_data_ = GenerateRandomVector(kCount_);
+    expected_result_ = -2000;
   }
 
   static std::vector<int> GenerateRandomVector(size_t size) {
     std::vector<int> result(size);
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> dis(-1000000, 1000000);
+    std::uniform_int_distribution<int> dis(-1000, 1000);
+
     for (size_t i = 0; i < size; ++i) {
       result[i] = dis(gen);
     }
-    if (size > 0) {
-      result[size / 2] = -2000000;
-    }
+
+    std::uniform_int_distribution<size_t> pos_dis(0, size - 1);
+    size_t min_pos = pos_dis(gen);
+    result[min_pos] = -2000;
+
     return result;
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
-    int expected = *std::min_element(input_data_.begin(), input_data_.end());
-    return output_data == expected;
+    return output_data == expected_result_;
   }
 
   InType GetTestInputData() final {
