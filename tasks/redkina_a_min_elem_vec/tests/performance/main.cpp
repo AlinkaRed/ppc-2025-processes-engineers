@@ -17,29 +17,29 @@ class RedkinaAMinElemVecRunPerfTests : public ppc::util::BaseRunPerfTests<InType
  protected:
   void SetUp() override {
     std::random_device rd;
-    std::mt19937 g(rd());
+    std::mt19937 gen(rd());
     std::uniform_int_distribution<int> rand(-1000, 1000);
 
-    input_vec_.resize(kSize);
+    input_vec.resize(kSize);
     for (size_t i = 0; i < kSize; i++) {
-      input_vec_[i] = rand(g);
+      input_vec[i] = rand(gen);
     }
 
-    expected_res_ = -2000;
-    input_vec_[kSize / 2] = expected_res_;
+    expected_res = -2000;
+    input_vec[kSize / 2] = expected_res;
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
-    return expected_res_ == output_data;
+    return expected_res == output_data;
   }
 
   InType GetTestInputData() final {
-    return input_vec_;
+    return input_vec;
   }
 
  private:
-  InType input_vec_;
-  OutType expected_res_{};
+  InType input_vec;
+  OutType expected_res{};
 };
 
 TEST_P(RedkinaAMinElemVecRunPerfTests, RunPerfModes) {
