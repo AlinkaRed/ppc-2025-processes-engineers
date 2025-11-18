@@ -20,26 +20,26 @@ class RedkinaAMinElemVecRunPerfTests : public ppc::util::BaseRunPerfTests<InType
     std::mt19937 gen(rd());
     std::uniform_int_distribution<int> rand(-1000, 1000);
 
-    input_vec.resize(kSize);
+    input_vec_.resize(kSize);
     for (size_t i = 0; i < kSize; i++) {
-      input_vec[i] = rand(gen);
+      input_vec_[i] = rand(gen);
     }
 
-    expected_res = -2000;
-    input_vec[kSize / 2] = expected_res;
+    expected_res_ = -2000;
+    input_vec_[kSize / 2] = expected_res_;
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
-    return expected_res == output_data;
+    return expected_res_ == output_data;
   }
 
   InType GetTestInputData() final {
-    return input_vec;
+    return input_vec_;
   }
 
  private:
-  InType input_vec;
-  OutType expected_res{};
+  InType input_vec_;
+  OutType expected_res_{};
 };
 
 TEST_P(RedkinaAMinElemVecRunPerfTests, RunPerfModes) {
