@@ -53,7 +53,7 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
       if (i < rem) {
         displs[i] = i * (base + 1);
       } else {
-        displs[i] = rem * (base + 1) + (i - rem) * base;
+        displs[i] = (rem * (base + 1)) + ((i - rem) * base);
       }
     }
   }
