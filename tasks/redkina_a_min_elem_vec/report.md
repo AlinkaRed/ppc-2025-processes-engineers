@@ -55,63 +55,84 @@ bool RedkinaAMinElemVecSEQ::RunImpl() {
 
 ## Схема распараллеливания (MPI)
 
-  Алгоритм параллельно находит минимальный элемент вектора, разделяя данные между процессами и объединяя локальные минимумы через коллективную операцию MPI.
+Алгоритм рассчитывает минимальный элемент входного вектора параллельно, распределяя данные между всеми процессами при помощи механизма разрозненной рассылки (`MPI_Scatterv`). Каждый процесс находит локальный минимум своей части данных, после чего локальные результаты объединяются в глобальный минимум.
 
-  1. **Инициализация:** Все процессы запускаются в одном коммуникаторе `MPI_COMM_WORLD`.  
-  2. **Передача размера:** Процесс 0 рассылает длину вектора всем остальным процессам (`MPI_Bcast`).  
-  3. **Распределение данных:** Каждый процесс вычисляет границы своей подвыборки. Деление почти равномерное: первые remainder процессов получают на один элемент больше, если размер вектора не делится нацело.  
-  4. **Локальный минимум:** Каждый процесс ищет минимум в своей части вектора. Для процессов, которые получают пустую подвыборку (`size_l == 0 и rank >= n`), локальный минимум устанавливается в `INT_MAX`.  
-  5. **Глобальная редукция:** Результаты всех процессов объединяются вызовом `MPI_Allreduce`.  
-  6. **Завершение:** Глобальный минимум сохраняется в выходной переменной у всех процессов.
+1. **Инициализация.**  
+   Все процессы работают в одном коммуникаторе `MPI_COMM_WORLD`. Каждый процесс узнаёт свой ранг и общее количество процессов.
+
+2. **Передача размера.**  
+   Процесс 0 вычисляет размер входного вектора и рассылает это значение всем процессам с помощью `MPI_Bcast`.
+
+3. **Распределение данных между процессами.**  
+   Вектор делится почти равномерно: базовый размер `base = n / size`, а первые `rem = n % size` процессов получают на один элемент больше.  
+   На процессе 0 формируются массивы `send_counts` и `displs`, которые определяют, сколько элементов и с какого смещения получает каждый процесс.  
+   Рассылка данных выполняется вызовом `MPI_Scatterv`:  
+   - процесс 0 отправляет части исходного массива,  
+   - остальные процессы получают только свою локальную часть, не имея доступа к полному вектору.
+
+4. **Локальный минимум.**  
+   Каждый процесс последовательно просматривает полученный участок данных и вычисляет минимальный элемент среди них. Если процесс получил пустой участок (что возможно только при `n < size`), то локальный минимум остаётся равным `INT_MAX`.
+
+5. **Глобальная редукция.**  
+   Результаты всех процессов объединяются вызовом `MPI_Allreduce` с операцией `MPI_MIN`. Таким образом, все процессы получают один и тот же глобальный минимум.
+
+6. **Завершение.**  
+   Каждый процесс записывает вычисленный глобальный минимум в выходную переменную.
 
 ### Код параллельной реализации
 
 ```cpp
 bool RedkinaAMinElemVecMPI::RunImpl() {
-  const auto &vec = GetInput();
-
   int rank = 0;
   int size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  int n = static_cast<int>(vec.size());
+  int n = 0;
+  if (rank == 0) {
+    n = static_cast<int>(GetInput().size());
+  }
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  std::vector<int> local_vec(n);
+  int base = n / size;
+  int rem = n % size;
+  int local_size = (rank < rem) ? base + 1 : base;
+
+  std::vector<int> local_vec(local_size);
+
+  std::vector<int> send_counts;
+  std::vector<int> displs;
+
   if (rank == 0) {
-    local_vec = vec;
+    send_counts.resize(size);
+    displs.resize(size);
+    for (int i = 0; i < size; i++) {
+      send_counts[i] = (i < rem) ? base + 1 : base;
+      if (i < rem) {
+        displs[i] = i * (base + 1);
+      } else {
+        displs[i] = (rem * (base + 1)) + ((i - rem) * base);
+      }
+    }
   }
-  MPI_Bcast(local_vec.data(), n, MPI_INT, 0, MPI_COMM_WORLD);
 
-  int size_l = n / size;
-  int remainder = n % size;
-
-  int start_idx = 0;
-  int end_idx = 0;
-
-  if (rank < remainder) {
-    start_idx = rank * (size_l + 1);
-    end_idx = start_idx + size_l + 1;
+  if (rank == 0) {
+    MPI_Scatterv(GetInput().data(), send_counts.data(), displs.data(), MPI_INT, 
+                 local_vec.data(), local_size, MPI_INT, 0, MPI_COMM_WORLD);
   } else {
-    start_idx = (remainder * (size_l + 1)) + ((rank - remainder) * size_l);
-    end_idx = start_idx + size_l;
+    MPI_Scatterv(nullptr, nullptr, nullptr, MPI_INT, 
+                 local_vec.data(), local_size, MPI_INT, 0, MPI_COMM_WORLD);
   }
 
   int min_l = INT_MAX;
-  for (int i = start_idx; i < end_idx && i < n; i++) {
-    min_l = std::min(min_l, local_vec[i]);
-  }
-
-  if (size_l == 0 && rank >= n) {
-    min_l = INT_MAX;
+  for (int v : local_vec) {
+    min_l = std::min(min_l, v);
   }
 
   int min_g = 0;
   MPI_Allreduce(&min_l, &min_g, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 
   GetOutput() = min_g;
-
   return true;
 }
 ```
@@ -171,21 +192,19 @@ bool RedkinaAMinElemVecMPI::RunImpl() {
 
 **Время выполнения task_run**
 
-| Режим | Процессы | Время, с |  Ускорение |
-|-------|----------|----------|------------|
-| seq   | 1        | 0.045    |  1.00      |
-| mpi   | 2        | 0.032    |  1.41      |
-| mpi   | 3        | 0.026    |  1.73      |
-| mpi   | 4        | 0.027    |  1.67      |
+Режим | Процессы | Время, с | Ускорение  | Эффективность
+seq   | 1        | 0.062    | 1.00       | 1.00
+mpi   | 2        | 0.086    | 0.72       | 0.36
+mpi   | 3        | 0.092    | 0.67       | 0.22
+mpi   | 4        | 0.075    | 0.83       | 0.21
 
 **Время выполнения pipeline**
 
-| Режим | Процессы | Время, с |  Ускорение |
-|-------|----------|----------|------------|
-| seq   | 1        | 0.060    |  1.00      |
-| mpi   | 2        | 0.059    |  1.02      |
-| mpi   | 3        | 0.060    |  1.00      |
-| mpi   | 4        | 0.060    |  1.00      |
+Режим | Процессы | Время, с | Ускорение  | Эффективность
+seq   | 1        | 0.064    | 1.00       | 1.00
+mpi   | 2        | 0.096    | 0.67       | 0.33
+mpi   | 3        | 0.078    | 0.82       | 0.27
+mpi   | 4        | 0.089    | 0.72       | 0.18
 
 **Результат:** Все тесты успешно пройдены.
 
@@ -334,6 +353,7 @@ bool RedkinaAMinElemVecSEQ::PostProcessingImpl() {
 
 #include <mpi.h>
 
+#include <algorithm>
 #include <climits>
 #include <vector>
 
@@ -356,50 +376,55 @@ bool RedkinaAMinElemVecMPI::PreProcessingImpl() {
 }
 
 bool RedkinaAMinElemVecMPI::RunImpl() {
-  const auto &vec = GetInput();
-
   int rank = 0;
   int size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  int n = static_cast<int>(vec.size());
+  int n = 0;
+  if (rank == 0) {
+    n = static_cast<int>(GetInput().size());
+  }
   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  std::vector<int> local_vec(n);
+  int base = n / size;
+  int rem = n % size;
+  int local_size = (rank < rem) ? base + 1 : base;
+
+  std::vector<int> local_vec(local_size);
+
+  std::vector<int> send_counts;
+  std::vector<int> displs;
+
   if (rank == 0) {
-    local_vec = vec;
+    send_counts.resize(size);
+    displs.resize(size);
+    for (int i = 0; i < size; i++) {
+      send_counts[i] = (i < rem) ? base + 1 : base;
+      if (i < rem) {
+        displs[i] = i * (base + 1);
+      } else {
+        displs[i] = (rem * (base + 1)) + ((i - rem) * base);
+      }
+    }
   }
-  MPI_Bcast(local_vec.data(), n, MPI_INT, 0, MPI_COMM_WORLD);
 
-  int size_l = n / size;
-  int remainder = n % size;
-
-  int start_idx = 0;
-  int end_idx = 0;
-
-  if (rank < remainder) {
-    start_idx = rank * (size_l + 1);
-    end_idx = start_idx + size_l + 1;
+  if (rank == 0) {
+    MPI_Scatterv(GetInput().data(), send_counts.data(), displs.data(), MPI_INT, local_vec.data(), local_size, MPI_INT,
+                 0, MPI_COMM_WORLD);
   } else {
-    start_idx = (remainder * (size_l + 1)) + ((rank - remainder) * size_l);
-    end_idx = start_idx + size_l;
+    MPI_Scatterv(nullptr, nullptr, nullptr, MPI_INT, local_vec.data(), local_size, MPI_INT, 0, MPI_COMM_WORLD);
   }
 
   int min_l = INT_MAX;
-  for (int i = start_idx; i < end_idx && i < n; i++) {
-    min_l = std::min(min_l, local_vec[i]);
-  }
-
-  if (size_l == 0 && rank >= n) {
-    min_l = INT_MAX;
+  for (int v : local_vec) {
+    min_l = std::min(min_l, v);
   }
 
   int min_g = 0;
   MPI_Allreduce(&min_l, &min_g, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 
   GetOutput() = min_g;
-
   return true;
 }
 
