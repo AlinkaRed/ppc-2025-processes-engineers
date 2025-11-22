@@ -25,42 +25,64 @@ bool RedkinaAMinElemVecMPI::PreProcessingImpl() {
 }
 
 bool RedkinaAMinElemVecMPI::RunImpl() {
-  const auto &vec = GetInput();
-
   int rank = 0;
   int size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  int n = static_cast<int>(vec.size());
-  MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  int n = 0;
+  std::vector<int> local_vec;
 
-  std::vector<int> local_vec(n);
   if (rank == 0) {
-    local_vec = vec;
+    const auto &vec = GetInput();
+    n = static_cast<int>(vec.size());
   }
-  MPI_Bcast(local_vec.data(), n, MPI_INT, 0, MPI_COMM_WORLD);
+
+  MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   int size_l = n / size;
   int remainder = n % size;
 
-  int start_idx = 0;
-  int end_idx = 0;
+  int local_size = (rank < remainder) ? size_l + 1 : size_l;
 
+  int displacement = 0;
   if (rank < remainder) {
-    start_idx = rank * (size_l + 1);
-    end_idx = start_idx + size_l + 1;
+    displacement = rank * (size_l + 1);
   } else {
-    start_idx = (remainder * (size_l + 1)) + ((rank - remainder) * size_l);
-    end_idx = start_idx + size_l;
+    displacement = remainder * (size_l + 1) + (rank - remainder) * size_l;
+  }
+
+  local_vec.resize(local_size);
+
+  if (rank == 0) {
+    const auto &vec = GetInput();
+
+    std::vector<int> send_counts(size);
+    std::vector<int> displacements(size);
+
+    for (int i = 0; i < size; ++i) {
+      send_counts[i] = (i < remainder) ? size_l + 1 : size_l;
+      if (i < remainder) {
+        displacements[i] = i * (size_l + 1);
+      } else {
+        displacements[i] = remainder * (size_l + 1) + (i - remainder) * size_l;
+      }
+    }
+
+    MPI_Scatterv(vec.data(), send_counts.data(), displacements.data(), MPI_INT, local_vec.data(), local_size, MPI_INT,
+                 0, MPI_COMM_WORLD);
+  } else {
+    MPI_Scatterv(nullptr, nullptr, nullptr, MPI_INT, local_vec.data(), local_size, MPI_INT, 0, MPI_COMM_WORLD);
   }
 
   int min_l = INT_MAX;
-  for (int i = start_idx; i < end_idx && i < n; i++) {
-    min_l = std::min(min_l, local_vec[i]);
+  if (local_size > 0) {
+    for (int val : local_vec) {
+      min_l = std::min(min_l, val);
+    }
   }
 
-  if (size_l == 0 && rank >= n) {
+  if (local_size == 0) {
     min_l = INT_MAX;
   }
 
